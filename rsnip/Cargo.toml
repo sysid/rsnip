@@ -1,0 +1,16 @@
+[package]
+name = "rsnip"
+version = "0.1.0"
+edition = "2021"
+description = "A command-line snippet manager"
+repository = "https://github.com/YOUR_USERNAME/rsnip"
+documentation = "https://docs.rs/rsnip"
+keywords = ["snippet", "cli", "manager"]
+categories = ["command-line-utilities"]
+readme = "../README.md"
+license = "BSD-3-Clause"
+
+[dependencies]
+anyhow = "1.0"
+thiserror = "1.0"
+clap = { version = "4.4", features = ["derive"] }
