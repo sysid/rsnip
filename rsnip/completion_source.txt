@@ -1,0 +1,3 @@
+apple|this is green
+banana|this is yellow
+else|this is other

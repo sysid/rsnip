@@ -38,6 +38,12 @@ test:  ## test
 	RUST_LOG=DEBUG pushd $(pkg_src) && cargo test -- --test-threads=1  # --nocapture
 	#RUST_LOG=DEBUG pushd $(pkg_src) && cargo test
 
+#.PHONY: source
+#source:  ## source
+	## ~/.bashrc
+	## source /path/to/mytool.bash
+
+
 ################################################################################
 # Building, Deploying \
 BUILDING:  ## ##################################################################

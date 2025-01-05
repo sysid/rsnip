@@ -1,28 +1,72 @@
-use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, Subcommand};
+use rsnip::application::{perform_completion, print_completions};
+use rsnip::domain::CompletionType;
 
-/// A command-line snippet manager
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-    /// Name of the person to greet
-    #[arg(short, long, default_value = "world")]
-    name: String,
+/// Command line options
+#[derive(Debug, Parser)]
+#[command(name = "autocomplete-poc", version = "0.1.0")]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
 }
 
-fn main() -> Result<()> {
-    let args = Args::parse();
-    println!("Hello, {}!", args.name);
-    Ok(())
+#[derive(Debug, Subcommand)]
+enum Commands {
+    /// Perform completion using a specified type and user input
+    Complete {
+        /// Type of completion e.g. "mytype"
+        #[arg(short, long)]
+        ctype: String,
+        /// The partial input to match on
+        #[arg(short, long)]
+        input: String,
+        /// If --scriptable-output is set, we print all matches instead of copying
+        #[arg(long)]
+        scriptable_output: bool,
+    },
+    Xxx {
+        /// Type of completion e.g. "mytype"
+        #[arg(short, long)]
+        ctype: String,
+        /// The partial input to match on
+        #[arg(short, long)]
+        input: String,
+    },
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+    match cli.command {
+        Commands::Complete {
+            ctype,
+            input,
+            scriptable_output,
+        } => {
+            // For POC, let's define a single completion type directly:
+            let completion_type = CompletionType {
+                name: ctype,
+                source_file: std::path::PathBuf::from("completion_source.txt"),
+                keyboard_shortcut: "ctrl+x".into(),
+                action: rsnip::domain::CompletionAction::CopyToClipboard,
+            };
 
-    #[test]
-    fn given_name_when_parsing_args_then_returns_correct_name() {
-        let args = Args::parse_from(&["test", "--name", "Rustacean"]);
-        assert_eq!(args.name, "Rustacean");
+            if scriptable_output {
+                // Print all matches in a script-friendly way
+                print_completions(&completion_type, &input)?;
+            } else {
+                // Normal path: copy to clipboard, etc.
+                match perform_completion(&completion_type, &input)? {
+                    Some(item) => {
+                        println!("Matched: {}", item.text);
+                    }
+                    None => println!("No match found."),
+                }
+            }
+        },
+        Commands::Xxx { ctype, input } => {
+            // Placeholder for future command
+            println!("Command xxx: {} {}", ctype, input);
+        }
     }
+    Ok(())
 }
