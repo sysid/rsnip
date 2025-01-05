@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use rsnip::application::{find_completion, find_completion_interactive};
+use rsnip::application::{copy_snippet_to_clipboard, find_completion, find_completion_interactive};
 use rsnip::domain::CompletionType;
 
 #[derive(Debug, Parser)]
@@ -29,7 +29,16 @@ enum Commands {
         #[arg(short, long)]
         ctype: String,
         /// The text to look up from completion
+        #[arg(long)]
+        input: String,
+    },
+    /// Copy text to clipboard
+    Copy {
+        /// Type of completion e.g. "mytype"
         #[arg(short, long)]
+        ctype: String,
+        /// The text to copy
+        #[arg(long)]
         input: String,
     },
 }
@@ -38,23 +47,25 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Complete { ctype, input, interactive } => {
+        Commands::Complete {
+            ctype,
+            input,
+            interactive,
+        } => {
             let completion_type = CompletionType {
                 name: ctype,
                 source_file: std::path::PathBuf::from("completion_source.txt"),
-                keyboard_shortcut: "ctrl+x".into(),
-                action: rsnip::domain::CompletionAction::CopyToClipboard, // Will be removed later
             };
 
             let input = input.as_deref().unwrap_or("");
 
             if interactive {
                 if let Some(item) = find_completion_interactive(&completion_type, input)? {
-                    println!("{}", item.text);
+                    println!("{}", item.name);
                 }
             } else {
                 if let Some(item) = find_completion(&completion_type, input)? {
-                    println!("{}", item.text);
+                    println!("{}", item.name);
                 }
             }
         }
@@ -62,7 +73,30 @@ fn main() -> anyhow::Result<()> {
             // Placeholder for future command
             println!("Command xxx: {} {}", ctype, input);
         }
+        Commands::Copy { ctype, input } => {
+            let completion_type = CompletionType {
+                name: ctype.clone(),
+                source_file: std::path::PathBuf::from("completion_source.txt"),
+            };
+
+            match copy_snippet_to_clipboard(&completion_type, &input)? {
+                true => println!("Snippet copied to clipboard"),
+                false => eprintln!("No matching snippet found for '{}'", input),
+            }
+        }
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html#testing
+    #[test]
+    fn verify_cli() {
+        use clap::CommandFactory;
+        Cli::command().debug_assert();
+    }
 }

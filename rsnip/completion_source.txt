@@ -1,4 +1,17 @@
-apple|this is green
-aple|this is green2
-banana|this is yellow
-else|this is other
+: This is a completion source file
+
+--- apple
+this is green
+and nothing else
+---
+
+--- aple
+this is green2
+---
+
+--- banana
+this is yellow
+---
+--- else
+this is other
+---

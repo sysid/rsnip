@@ -3,6 +3,7 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/rsnip/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rsnip/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/rsnip/target" />
     </content>
     <orderEntry type="inheritedJdk" />
