@@ -1,36 +1,32 @@
 # rsnip.bash
+complete -r rsnip  # Remove any existing completion
 
-complete -r rsnip     # Remove any existing 'rsnip' completion
-complete -r mytags    # Remove any existing 'mytags' completion
-
-# 1) Completion function invoked by bash when completing `rsnip`
+# Enhanced completion function with both modes
 _rsnip_complete() {
-  # Current word being typed
-  local cur="${COMP_WORDS[COMP_CWORD]}"
+  # Only show completions when cursor is at the end of the line
+  [[ ${#COMP_WORDS[@]} -eq $((COMP_CWORD + 1)) ]] || return
 
-  # Use a local IFS so space/newline handling won't break COMPREPLY
-  local IFS=$'\n'
-  # Call your Rust binary in "scriptable" mode that prints all possible completions
-  local output
-  # Uses the hidden subcommand "complete"
-  output=$(rsnip complete --ctype mytype --input "${cur}" --scriptable-output 2>/dev/null)
-
-  # Split the returned output into an array of suggestions
-  COMPREPLY=( $(compgen -W "${output}" -- "${cur}") )
-  return 0
+  local result
+  # If there is a space after the last word, use interactive with previous word as input
+  if [[ -z ${COMP_WORDS[-1]} ]] && [[ ${#COMP_WORDS[@]} -gt 1 ]]; then
+    result="$(rsnip complete --interactive --ctype mytype --input "${COMP_WORDS[-2]}")" &&
+      COMPREPLY=("$result")
+    # Redraw line after fzf closes
+    printf '\e[5n'
+  else
+    # Use non-interactive completion for direct input
+    result="$(rsnip complete --ctype mytype --input "${COMP_WORDS[-1]}")"
+    if [[ -n "$result" ]]; then
+      COMPREPLY=("$result")
+    fi
+  fi
 }
 
-complete -F _rsnip_complete rsnip --ctype mytpye
+# Enable line editing features needed for interactive completion
+if [[ :"${SHELLOPTS}": =~ :(vi|emacs): && ${TERM} != 'dumb' ]]; then
+  # Bind escape sequence for redrawing line after fuzzy selection
+  bind '"\e[0n": redraw-current-line' &>/dev/null
+fi
 
-# For a different type:
-_rsnip_complete_tags() {
-  local cur="${COMP_WORDS[COMP_CWORD]}"
-  local IFS=$'\n'
-  local output
-  output=$(rsnip complete --ctype tags --input "${cur}" --scriptable-output 2>/dev/null)
-
-  COMPREPLY=( $(compgen -W "${output}" -- "${cur}") )
-  return 0
-}
-
-complete -F _rsnip_complete_tags mytags
+# Setup completion
+complete -F _rsnip_complete rsnip

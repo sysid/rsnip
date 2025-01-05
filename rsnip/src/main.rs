@@ -1,10 +1,9 @@
 use clap::{Parser, Subcommand};
-use rsnip::application::{perform_completion, print_completions};
+use rsnip::application::{find_completion, find_completion_interactive};
 use rsnip::domain::CompletionType;
 
-/// Command line options
 #[derive(Debug, Parser)]
-#[command(name = "autocomplete-poc", version = "0.1.0")]
+#[command(name = "rsnip", version = "0.1.0")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -12,23 +11,24 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Perform completion using a specified type and user input
+    /// Find completions with optional interactive selection
     Complete {
         /// Type of completion e.g. "mytype"
-        #[arg(short, long)]
+        #[arg(long)]
         ctype: String,
         /// The partial input to match on
-        #[arg(short, long)]
-        input: String,
-        /// If --scriptable-output is set, we print all matches instead of copying
         #[arg(long)]
-        scriptable_output: bool,
+        input: Option<String>,
+        /// Use interactive selection with fzf
+        #[arg(short, long)]
+        interactive: bool,
     },
+    /// Example command using completion result
     Xxx {
         /// Type of completion e.g. "mytype"
         #[arg(short, long)]
         ctype: String,
-        /// The partial input to match on
+        /// The text to look up from completion
         #[arg(short, long)]
         input: String,
     },
@@ -36,37 +36,33 @@ enum Commands {
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+
     match cli.command {
-        Commands::Complete {
-            ctype,
-            input,
-            scriptable_output,
-        } => {
-            // For POC, let's define a single completion type directly:
+        Commands::Complete { ctype, input, interactive } => {
             let completion_type = CompletionType {
                 name: ctype,
                 source_file: std::path::PathBuf::from("completion_source.txt"),
                 keyboard_shortcut: "ctrl+x".into(),
-                action: rsnip::domain::CompletionAction::CopyToClipboard,
+                action: rsnip::domain::CompletionAction::CopyToClipboard, // Will be removed later
             };
 
-            if scriptable_output {
-                // Print all matches in a script-friendly way
-                print_completions(&completion_type, &input)?;
+            let input = input.as_deref().unwrap_or("");
+
+            if interactive {
+                if let Some(item) = find_completion_interactive(&completion_type, input)? {
+                    println!("{}", item.text);
+                }
             } else {
-                // Normal path: copy to clipboard, etc.
-                match perform_completion(&completion_type, &input)? {
-                    Some(item) => {
-                        println!("Matched: {}", item.text);
-                    }
-                    None => println!("No match found."),
+                if let Some(item) = find_completion(&completion_type, input)? {
+                    println!("{}", item.text);
                 }
             }
-        },
+        }
         Commands::Xxx { ctype, input } => {
             // Placeholder for future command
             println!("Command xxx: {} {}", ctype, input);
         }
     }
+
     Ok(())
 }
