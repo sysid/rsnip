@@ -3,29 +3,10 @@ use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
 use arboard::Clipboard;
-
-pub fn read_completions_from_file(path: &Path) -> Result<Vec<Snippet>> {
-    let content = fs::read_to_string(path)?;
-    let items = content
-        .lines()
-        .filter_map(|line| {
-            let line = line.trim();
-            if line.is_empty() {
-                return None;
-            }
-            let mut parts = line.splitn(2, '|');
-            let text = parts.next()?.to_string();
-            let desc = parts.next().map(|s| s.to_string());
-            Some(Snippet {
-                name: text,
-                snippet: desc,
-            })
-        })
-        .collect();
-    Ok(items)
-}
+use tracing::instrument;
 
 /// Copy text to system clipboard, removing any trailing newlines
+#[instrument(level = "trace")]
 pub fn copy_to_clipboard(text: &str) -> Result<()> {
     let mut clipboard = Clipboard::new().context("Failed to initialize clipboard")?;
     // Ensure we remove any trailing newlines
@@ -34,6 +15,7 @@ pub fn copy_to_clipboard(text: &str) -> Result<()> {
     Ok(())
 }
 
+#[instrument(level = "debug")]
 pub fn parse_snippets_file(path: &Path) -> Result<Vec<Snippet>> {
     let content = fs::read_to_string(path)?;
     let mut snippets = Vec::new();

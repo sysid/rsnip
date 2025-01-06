@@ -7,4 +7,7 @@ A command-line snippet manager.
 ```bash
 cargo install rsnip
 ```
-# rsnip
+
+# Ideas, Roadmap
+- integration with bkmr
+- read Ultisnips snippets

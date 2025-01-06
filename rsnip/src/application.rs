@@ -4,8 +4,10 @@ use crate::infrastructure::parse_snippets_file;
 use anyhow::{Context, Result};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use std::{cmp::Reverse};
+use tracing::instrument;
 
 /// Finds completions interactively using fuzzy finder
+#[instrument(level = "debug")]
 pub fn find_completion_interactive(
     completion_type: &SnippetType,
     user_input: &str,
@@ -28,6 +30,7 @@ pub fn find_completion_interactive(
 }
 
 /// Find first matching completion non-interactively
+#[instrument(level = "debug")]
 pub fn find_completion_fuzzy(
     completion_type: &SnippetType,
     user_input: &str,
@@ -53,6 +56,7 @@ pub fn find_completion_fuzzy(
 }
 
 /// Find a completion using an exact match
+#[instrument(level = "debug")]
 pub fn find_completion_exact(
     completion_type: &SnippetType,
     user_input: &str,
@@ -65,6 +69,7 @@ pub fn find_completion_exact(
     Ok(items.into_iter().find(|item| item.name == user_input))
 }
 
+#[instrument(level = "debug")]
 pub fn copy_snippet_to_clipboard(
     completion_type: &SnippetType,
     input: &str,

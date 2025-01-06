@@ -1,6 +1,7 @@
 use crate::domain::Snippet;
 use anyhow::Result;
 use skim::{prelude::*, Skim};
+use tracing::trace;
 
 // Struct to hold snippet text and preview
 #[derive(Clone)]
@@ -53,7 +54,7 @@ fn create_skim_items(items: &[Snippet]) -> Vec<Arc<dyn SkimItem>> {
 
 /// Run fuzzy finder with multiline preview support
 pub fn run_fuzzy_finder(items: &[Snippet], initial_query: &str) -> Result<Option<String>> {
-    eprintln!("Starting fuzzy finder"); // Debug
+    trace!("Starting fuzzy finder"); // Debug
 
     if let Some(exact) = items.iter().find(|i| i.name == initial_query) {
         return Ok(Some(exact.name.clone()));
@@ -69,15 +70,15 @@ pub fn run_fuzzy_finder(items: &[Snippet], initial_query: &str) -> Result<Option
         .exit_0(true)
         .build()?;
 
-    eprintln!("Options built"); // Debug
+    trace!("Options built"); // Debug
 
     let skim_items = create_skim_items(items);
-    eprintln!("Items created: {}", skim_items.len()); // Add item count debug
+    trace!("Items created: {}", skim_items.len()); // Add item count debug
 
     // Use unbounded channel to prevent potential deadlock
     let (tx_sink, rx_reader): (SkimItemSender, SkimItemReceiver) = unbounded();
 
-    eprintln!("Channel created"); // Debug
+    trace!("Channel created"); // Debug
 
     for item in skim_items {
         tx_sink.send(item)?;
@@ -85,13 +86,13 @@ pub fn run_fuzzy_finder(items: &[Snippet], initial_query: &str) -> Result<Option
     // Close the sender so skim knows we're done
     drop(tx_sink);
 
-    eprintln!("Items sent"); // Debug
+    trace!("Items sent"); // Debug
 
     let selected = Skim::run_with(&options, Some(rx_reader))
         .map(|out| out.selected_items)
         .unwrap_or_default();
 
-    eprintln!("Skim completed"); // Debug
+    trace!("Skim completed"); // Debug
 
     Ok(selected.first().map(|item| {
         // Extract just the name part before the tab character

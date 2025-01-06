@@ -20,3 +20,9 @@ crossterm = "0.28.1"
 fuzzy-matcher = "0.3.7"
 once_cell = "1.20.2"
 arboard = "3.4.1"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+clap_complete = "4.5.40"
+serde = { version = "1.0.217", features = ["derive"] }
+dirs = "5.0.1"
+config = "0.15.4"

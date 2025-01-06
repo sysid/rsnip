@@ -38,6 +38,10 @@ test:  ## test
 	RUST_LOG=DEBUG pushd $(pkg_src) && cargo test -- --test-threads=1  # --nocapture
 	#RUST_LOG=DEBUG pushd $(pkg_src) && cargo test
 
+.PHONY: test-trace
+test-trace:  ## test-trace: show traces (would not be shown due to fzf interactive mode)
+	rsnip/target/debug/rsnip -ddd complete --ctype mytype --input app --interactive
+
 #.PHONY: source
 #source:  ## source
 	## ~/.bashrc
