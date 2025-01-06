@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use rsnip::application::{copy_snippet_to_clipboard, find_completion, find_completion_interactive};
+use rsnip::application::{copy_snippet_to_clipboard, find_completion_exact, find_completion_interactive};
 use rsnip::domain::SnippetType;
 
 #[derive(Debug, Parser)]
@@ -63,10 +63,8 @@ fn main() -> anyhow::Result<()> {
                 if let Some(item) = find_completion_interactive(&completion_type, input)? {
                     println!("{}", item.name);
                 }
-            } else {
-                if let Some(item) = find_completion(&completion_type, input)? {
-                    println!("{}", item.name);
-                }
+            } else if let Some(item) = find_completion_exact(&completion_type, input)? {
+                println!("{}", item.name);
             }
         }
         Commands::Xxx { ctype, input } => {
@@ -79,9 +77,10 @@ fn main() -> anyhow::Result<()> {
                 source_file: std::path::PathBuf::from("completion_source.txt"),
             };
 
-            match copy_snippet_to_clipboard(&completion_type, &input)? {
+            match copy_snippet_to_clipboard(&completion_type, &input, true)? {
                 Some(snippet) => {
-                    println!("Snippet '{}' copied to clipboard", snippet.name);
+                    println!("Snippet '{}' copied to clipboard:\n", snippet.name);
+                    println!("{}", snippet.snippet.unwrap_or_default());
                 }
                 None => {
                     eprintln!("No matching snippet found for '{}'", input);
