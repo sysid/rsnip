@@ -21,7 +21,7 @@ pub fn find_completion_interactive(
         return Ok(None);
     }
 
-    let selected_item = fuzzy::run_fuzzy_finder(&items, user_input)?;
+    let selected_item = fuzzy::run_fuzzy_finder(&items, completion_type, user_input)?;
 
     // Return the selected snippet
     Ok(selected_item.and_then(|name| {

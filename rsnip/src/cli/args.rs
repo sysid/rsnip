@@ -2,7 +2,8 @@ use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 
 #[derive(Debug, Parser)]
-#[command(name = "rsnip", version = "0.1.0")]
+#[command(author, version, about, long_about = None)] // Read from `Cargo.toml`
+#[command(arg_required_else_help = true, disable_help_subcommand = true)]
 pub struct Cli {
     /// Enable debug logging. Multiple flags (-d, -dd, -ddd) increase verbosity
     #[arg(short, long, action = clap::ArgAction::Count)]

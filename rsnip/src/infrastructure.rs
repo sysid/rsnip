@@ -92,15 +92,38 @@ pub fn parse_snippets_file(path: &Path) -> Result<Vec<Snippet>> {
 }
 
 #[instrument(level = "debug")]
-pub fn edit_snips_file(snippet_type: &SnippetType) -> Result<()> {
+pub fn edit_snips_file(snippet_type: &SnippetType, line_number: Option<usize>) -> Result<()> {
     // Get editor from environment or fall back to sensible defaults
     let editor = env::var("EDITOR")
         .or_else(|_| env::var("VISUAL"))
         .unwrap_or_else(|_| "vim".to_string());
 
+    // Build command with optional line number
+    let mut cmd = Command::new(&editor);
+    cmd.arg(&snippet_type.source_file);
+
+    // Add line number argument based on editor
+    if let Some(line) = line_number {
+        match editor.as_str() {
+            "vim" | "nvim" => {
+                cmd.arg(format!("+{}", line));
+            }
+            "emacs" => {
+                cmd.arg(format!("+{}", line));
+            }
+            "nano" => {
+                cmd.arg(format!("+{}", line));
+            }
+            "code" | "codium" => {
+                cmd.arg(format!("--goto"));
+                cmd.arg(format!("{}:{}", snippet_type.source_file.display(), line));
+            }
+            _ => {} // Other editors might not support line numbers
+        }
+    }
+
     // Open editor
-    let status = Command::new(&editor)
-        .arg(&snippet_type.source_file)
+    let status = cmd
         .status()
         .with_context(|| format!("Failed to run editor: {}", editor))?;
 

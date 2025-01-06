@@ -31,7 +31,7 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
                 fs::write(&expanded_path, "# Snippet file for type: ".to_string() + ctype)?;
             }
 
-            infrastructure::edit_snips_file(&snippet_type)?;
+            infrastructure::edit_snips_file(&snippet_type, Some(1usize))?;
             Ok(())
         }
         Some(Commands::Types) => {

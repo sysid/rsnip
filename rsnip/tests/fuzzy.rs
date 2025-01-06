@@ -1,5 +1,7 @@
-use rsnip::domain::Snippet;
-use rsnip::fuzzy::run_fuzzy_finder;
+use std::path::PathBuf;
+use skim::{ItemPreview, PreviewContext};
+use rsnip::domain::{Snippet, SnippetType};
+use rsnip::fuzzy::{create_skim_items, run_fuzzy_finder};
 
 fn create_test_snippets() -> Vec<Snippet> {
     vec![
@@ -18,24 +20,34 @@ fn create_test_snippets() -> Vec<Snippet> {
     ]
 }
 
+fn create_test_snippet_type() -> SnippetType {
+    SnippetType {
+        name: "test".to_string(),
+        source_file: PathBuf::from("test_snippets.txt"),
+    }
+}
+
 #[test]
 fn given_exact_match_when_fuzzy_finder_then_returns_immediately() {
     let items = create_test_snippets();
-    let result = run_fuzzy_finder(&items, "apple").unwrap();
+    let snippet_type = create_test_snippet_type();
+    let result = run_fuzzy_finder(&items, &snippet_type, "apple").unwrap();
     assert_eq!(result, Some("apple".to_string()));
 }
 
 #[test]
 fn given_single_partial_match_when_fuzzy_finder_then_auto_selects() {
     let items = create_test_snippets();
-    let result = run_fuzzy_finder(&items, "ban").unwrap();
+    let snippet_type = create_test_snippet_type();
+    let result = run_fuzzy_finder(&items, &snippet_type, "ban").unwrap();
     assert_eq!(result, Some("banana".to_string()));
 }
 
 #[test]
 fn given_no_matches_when_fuzzy_finder_then_returns_none() {
     let items = create_test_snippets();
-    let result = run_fuzzy_finder(&items, "xyz").unwrap();
+    let snippet_type = create_test_snippet_type();
+    let result = run_fuzzy_finder(&items, &snippet_type, "xyz").unwrap();
     assert_eq!(result, None);
 }
 
@@ -63,6 +75,63 @@ fn given_no_matches_when_fuzzy_finder_then_returns_none() {
 #[test]
 fn given_empty_items_when_fuzzy_finder_then_returns_none() {
     let items: Vec<Snippet> = vec![];
-    let result = run_fuzzy_finder(&items, "anything").unwrap();
+    let snippet_type = create_test_snippet_type();
+    let result = run_fuzzy_finder(&items, &snippet_type, "anything").unwrap();
     assert_eq!(result, None);
+}
+
+#[test]
+fn test_create_skim_items() {
+    let snippets = vec![
+        Snippet {
+            name: "test1".to_string(),
+            snippet: Some("line1\nline2\nline3".to_string()),
+        },
+        Snippet {
+            name: "test2".to_string(),
+            snippet: None,
+        },
+    ];
+
+    let snippet_type = create_test_snippet_type();
+    let items = create_skim_items(&snippets, &snippet_type);
+
+    assert_eq!(items[0].output(), "test1\tline1");
+    assert_eq!(items[1].output(), "test2");
+
+    // Create a preview context for testing
+    let preview_context = PreviewContext {
+        query: "",
+        cmd_query: "",
+        width: 0,
+        height: 0,
+        current_index: 0,
+        current_selection: "",
+        selected_indices: &[],
+        selections: &[],
+    };
+
+    if let ItemPreview::Text(preview) = items[0].preview(preview_context) {
+        assert!(preview.contains("line1\nline2\nline3"));
+    } else {
+        panic!("Expected Text preview");
+    }
+
+    // Create a preview context for testing
+    let preview_context = PreviewContext {
+        query: "",
+        cmd_query: "",
+        width: 0,
+        height: 0,
+        current_index: 0,
+        current_selection: "",
+        selected_indices: &[],
+        selections: &[],
+    };
+
+    if let ItemPreview::Text(preview) = items[1].preview(preview_context) {
+        assert!(preview.contains("No content"));
+    } else {
+        panic!("Expected Text preview");
+    }
 }
