@@ -1,6 +1,7 @@
 use std::io::Write;
 use tempfile::NamedTempFile;
-use rsnip::domain::{parse_snippets_file, Snippet};
+use rsnip::domain::Snippet;
+use rsnip::infrastructure::parse_snippets_file;
 
 #[test]
 fn given_valid_snippet_file_when_parse_snippets_file_then_returns_correct_snippets() {

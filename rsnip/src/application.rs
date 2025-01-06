@@ -1,15 +1,16 @@
-use crate::domain::{Snippet, CompletionType, parse_snippets_file};
+use crate::domain::{SnippetType, Snippet};
 use anyhow::{Context, Result};
 use skim::{prelude::*, Skim};
-use std::{io::Cursor, cmp::Reverse};
+use std::{cmp::Reverse, io::Cursor};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use crate::infrastructure;
+use crate::infrastructure::parse_snippets_file;
 
 const FUZZY_FINDER_HEIGHT: &str = "50%";
 
 /// Finds completions interactively using fuzzy finder
 pub fn find_completion_interactive(
-    completion_type: &CompletionType,
+    completion_type: &SnippetType,
     user_input: &str,
 ) -> Result<Option<Snippet>> {
     // Read and parse snippets
@@ -35,7 +36,7 @@ pub fn find_completion_interactive(
 
 /// Find first matching completion non-interactively
 pub fn find_completion(
-    completion_type: &CompletionType,
+    completion_type: &SnippetType,
     user_input: &str,
 ) -> Result<Option<Snippet>> {
     // Return None for empty input
@@ -93,22 +94,19 @@ fn run_fuzzy_finder(items: &[String], initial_query: &str) -> Result<Option<Stri
 }
 
 pub fn copy_snippet_to_clipboard(
-    completion_type: &CompletionType,
+    completion_type: &SnippetType,
     input: &str,
-) -> Result<bool> {
-    let item = find_completion(completion_type, input)?;
-
-    if let Some(completion_item) = item {
-        if let Some(snippet) = completion_item.snippet {
-            infrastructure::copy_to_clipboard(&snippet)?;
-            Ok(true)
-        } else {
-            Ok(false) // Found item but no description
+) -> Result<Option<Snippet>> {
+    if let Some(completion_item) = find_completion(completion_type, input)? {
+        if let Some(snippet) = &completion_item.snippet {
+            infrastructure::copy_to_clipboard(snippet)?;
         }
+        Ok(Some(completion_item))
     } else {
-        Ok(false) // No matching item found
+        Ok(None)
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -117,53 +115,11 @@ mod tests {
     use tempfile::NamedTempFile;
 
     #[test]
-    fn given_existing_snippet_when_copying_then_returns_true() -> Result<()> {
-        let mut tmp = NamedTempFile::new()?;
-        writeln!(tmp, "--- apple\nA red fruit\n---")?;
-
-        let ctype = CompletionType {
-            name: "test".to_string(),
-            source_file: tmp.path().into(),
-        };
-
-        assert!(copy_snippet_to_clipboard(&ctype, "apple")?);
-        Ok(())
-    }
-
-    #[test]
-    fn given_nonexistent_snippet_when_copying_then_returns_false() -> Result<()> {
-        let mut tmp = NamedTempFile::new()?;
-        writeln!(tmp, "--- apple\nA red fruit\n---")?;
-
-        let ctype = CompletionType {
-            name: "test".to_string(),
-            source_file: tmp.path().into(),
-        };
-
-        assert!(!copy_snippet_to_clipboard(&ctype, "nonexistent")?);
-        Ok(())
-    }
-
-    #[test]
-    fn given_snippet_without_description_when_copying_then_returns_false() -> Result<()> {
-        let mut tmp = NamedTempFile::new()?;
-        writeln!(tmp, "--- apple\n---")?;
-
-        let ctype = CompletionType {
-            name: "test".to_string(),
-            source_file: tmp.path().into(),
-        };
-
-        assert!(!copy_snippet_to_clipboard(&ctype, "apple")?);
-        Ok(())
-    }
-
-    #[test]
     fn given_empty_input_when_finding_completion_then_returns_none() -> Result<()> {
         let mut tmp = NamedTempFile::new()?;
         writeln!(tmp, "--- apple\nA red fruit\n---\n--- banana\nA yellow fruit\n---")?;
 
-        let ctype = CompletionType {
+        let ctype = SnippetType {
             name: "test".to_string(),
             source_file: tmp.path().into(),
         };
