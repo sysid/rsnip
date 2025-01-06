@@ -1,5 +1,5 @@
 # rsnip.bash
-complete -r rsnip  # Remove any existing completion
+complete -r rsnip > /dev/null 2>&1  # Remove any existing completion
 
 # Enhanced completion function
 _rsnip_complete() {
