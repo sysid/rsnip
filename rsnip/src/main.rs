@@ -1,41 +1,49 @@
-use std::io;
-use clap::{Command, CommandFactory, Parser};
-use clap_complete::{generate, Generator};
+use clap::{Parser};
 use crossterm::style::Stylize;
+use rsnip::cli::args::Cli;
+use rsnip::cli::commands::execute_command;
+use rsnip::config::Settings;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::filter::filter_fn;
-use tracing_subscriber::{fmt, Layer};
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use rsnip::cli::args::Cli;
-use rsnip::cli::commands::execute_command;
-
-fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
-    generate(gen, cmd, cmd.get_name().to_string(), &mut io::stdout());
-}
+use tracing_subscriber::{fmt, Layer};
 
 fn main() {
     let cli = Cli::parse();
 
-    if let Some(generator) = cli.generator {
-        let mut cmd = Cli::command();
-        eprintln!("Generating completion file for {generator:?}...");
-        print_completions(generator, &mut cmd);
-    }
+    // Initialize configuration
+    let config = match Settings::new() {
+        Ok(config) => config,
+        Err(e) => {
+            eprintln!("{}", format!("Error loading configuration: {}", e).red());
+            std::process::exit(1);
+        }
+    };
+
     if cli.info {
         use clap::CommandFactory; // Trait which returns the current command
         if let Some(a) = Cli::command().get_author() {
             println!("AUTHOR: {}", a)
         }
         if let Some(v) = Cli::command().get_version() {
-            println!("VERSION: {}", v)
+            println!("VERSION: {}", v);
+        }
+        // Print available snippet types
+        println!("\nAvailable snippet types:");
+        for (name, cfg) in &config.snippet_types {
+            if let Some(desc) = &cfg.description {
+                println!("  {}: {}", name, desc);
+            } else {
+                println!("  {}", name);
+            }
         }
     }
 
     setup_logging(cli.debug);
 
-    if let Err(e) = execute_command(&cli) {
+    if let Err(e) = execute_command(&cli, &config) {
         eprintln!("{}", format!("Error: {}", e).red());
         std::process::exit(1);
     }
@@ -87,8 +95,8 @@ fn setup_logging(verbosity: u8) {
 
 #[cfg(test)]
 mod tests {
-    use tracing::info;
     use super::*;
+    use tracing::info;
 
     // https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html#testing
     #[test]

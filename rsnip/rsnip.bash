@@ -3,16 +3,51 @@ complete -r rsnip  # Remove any existing completion
 
 # Enhanced completion function
 _rsnip_complete() {
-    # Only show completions when cursor is at the end of the line
-    [[ ${#COMP_WORDS[@]} -eq $((COMP_CWORD + 1)) ]] || return
+    local cur prev
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    local result
-    # Always use interactive mode - fzf will auto-select on exact matches
-    result="$(rsnip complete --interactive --ctype mytype --input "${COMP_WORDS[-1]}")"
-    if [[ -n "$result" ]]; then
-        COMPREPLY=("$result")
-        # Redraw line after fzf closes
-        printf '\e[5n'
+    # List of available commands
+    local commands="copy edit"
+
+    # If completing a command
+    if [[ ${COMP_CWORD} -eq 1 ]]; then
+        COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
+        return 0
+    fi
+
+    # Get available snippet types
+    local snippet_types=$(rsnip --info 2>/dev/null | grep "Available types:" | cut -d':' -f2)
+
+    case "${prev}" in
+        "--ctype"|"-c")
+            COMPREPLY=( $(compgen -W "${snippet_types}" -- ${cur}) )
+            return 0
+            ;;
+        "complete"|"copy"|"xxx")
+            COMPREPLY=( $(compgen -W "--ctype --input --interactive" -- ${cur}) )
+            return 0
+            ;;
+    esac
+
+    # If we're completing an input and have a type specified
+    local ctype=""
+    for ((i=1; i<COMP_CWORD; i++)); do
+        if [[ "${COMP_WORDS[i]}" == "--ctype" || "${COMP_WORDS[i]}" == "-c" ]]; then
+            ctype="${COMP_WORDS[i+1]}"
+            break
+        fi
+    done
+
+    if [[ -n "${ctype}" && "${prev}" == "--input" ]]; then
+        local result
+        result="$(rsnip complete --interactive --ctype "${ctype}" --input "${cur}")"
+        if [[ -n "$result" ]]; then
+            COMPREPLY=("$result")
+            # Redraw line after fzf closes
+            printf '\e[5n'
+        fi
     fi
 }
 

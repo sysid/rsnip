@@ -1,5 +1,10 @@
+use std::collections::HashMap;
+use std::env;
 use std::io::Write;
-use tempfile::NamedTempFile;
+use tempfile::{tempdir, NamedTempFile};
+use rsnip::cli::args::{Cli, Commands};
+use rsnip::cli::commands::execute_command;
+use rsnip::config::{Settings, SnippetTypeConfig};
 use rsnip::domain::Snippet;
 use rsnip::infrastructure::parse_snippets_file;
 
@@ -135,4 +140,45 @@ random trailing text
             snippet: Some("line".to_string())
         }
     );
+}
+
+#[test]
+fn given_nonexistent_file_when_edit_then_creates_file() -> anyhow::Result<()> {
+    // Arrange
+    let temp_dir = tempdir()?;
+    let file_path = temp_dir.path().join("test_snippets.txt");
+
+    let config = Settings {
+        snippet_types: {
+            let mut map = HashMap::new();
+            map.insert(
+                "test".to_string(),
+                SnippetTypeConfig {
+                    source_file: file_path.clone(),
+                    description: None,
+                },
+            );
+            map
+        },
+        config_paths: vec![],
+    };
+
+    // Set a mock editor that just touches the file
+    env::set_var("EDITOR", "touch");
+
+    let cli = Cli {
+        debug: 0,
+        generator: None,
+        info: false,
+        command: Some(Commands::Edit {
+            ctype: Some("test".to_string()),
+        }),
+    };
+
+    // Act
+    execute_command(&cli, &config)?;
+
+    // Assert
+    assert!(file_path.exists());
+    Ok(())
 }

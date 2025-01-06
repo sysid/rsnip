@@ -1,8 +1,9 @@
 use anyhow::Result;
-use tempfile::NamedTempFile;
 use rsnip::application::{copy_snippet_to_clipboard, find_completion_fuzzy};
 use rsnip::domain::SnippetType;
 use std::io::Write;
+use tempfile::NamedTempFile;
+use rsnip::config::{get_snippet_type, Settings};
 
 #[test]
 fn given_empty_input_when_finding_completion_then_returns_none() -> Result<()> {
@@ -12,10 +13,8 @@ fn given_empty_input_when_finding_completion_then_returns_none() -> Result<()> {
         "--- apple\nA red fruit\n---\n--- banana\nA yellow fruit\n---"
     )?;
 
-    let ctype = SnippetType {
-        name: "test".to_string(),
-        source_file: tmp.path().into(),
-    };
+    let config = Settings::default();
+    let ctype = get_snippet_type(&config, "default")?;
 
     assert!(find_completion_fuzzy(&ctype, "")?.is_none());
     Ok(())

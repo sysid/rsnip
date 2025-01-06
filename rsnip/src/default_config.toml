@@ -1,0 +1,9 @@
+# default_config.toml
+
+[snippet_types.general]
+source_file = "~/.config/rsnip/general_snippets.txt"
+description = "General text snippets"
+
+[snippet_types.shell]
+source_file = "~/.config/rsnip/shell_snippets.txt"
+description = "Shell command snippets"

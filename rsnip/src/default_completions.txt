@@ -1,0 +1,17 @@
+: This is an example completion source file
+
+--- apple
+this is green
+and nothing else
+---
+
+--- aple
+this is green2
+---
+
+--- banana
+this is yellow
+---
+--- else
+this is other
+---

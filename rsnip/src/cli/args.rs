@@ -17,16 +17,24 @@ pub struct Cli {
     pub info: bool,
 
     #[command(subcommand)]
-    pub(crate) command: Option<Commands>,
+    pub command: Option<Commands>,
 }
 
 #[derive(Debug, Subcommand)]
-pub(crate) enum Commands {
+pub enum Commands {
+    /// List available snippet types
+    Types,
+    /// Edit snippet file in system editor
+    Edit {
+        /// Type of completion
+        #[arg(long)]
+        ctype: Option<String>,
+    },
     /// Find completions with optional interactive selection
     Complete {
-        /// Type of completion e.g. "mytype"
+        /// Type of completion
         #[arg(long)]
-        ctype: String,
+        ctype: Option<String>,
         /// The partial input to match on
         #[arg(long)]
         input: Option<String>,
@@ -34,21 +42,20 @@ pub(crate) enum Commands {
         #[arg(short, long)]
         interactive: bool,
     },
-    /// Example command using completion result
-    Xxx {
-        /// Type of completion e.g. "mytype"
-        #[arg(short, long)]
-        ctype: String,
-        /// The text to look up from completion
+    /// Copy text to clipboard
+    Copy {
+        /// Type of completion
+        #[arg(long)]
+        ctype: Option<String>,
+        /// The text to copy
         #[arg(long)]
         input: String,
     },
-    /// Copy text to clipboard
-    Copy {
-        /// Type of completion e.g. "mytype"
-        #[arg(short, long)]
-        ctype: String,
-        /// The text to copy
+    Xxx {
+        /// Type of completion
+        #[arg(long)]
+        ctype: Option<String>,
+        /// The text to look up from completion
         #[arg(long)]
         input: String,
     },
