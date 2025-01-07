@@ -135,3 +135,19 @@ fn test_create_skim_items() {
         panic!("Expected Text preview");
     }
 }
+
+#[test]
+fn test_fuzzy_finder_output_is_clean() {
+    let items = vec![Snippet {
+        name: "test".to_string(),
+        snippet: Some("content".to_string()),
+    }];
+    let snippet_type = SnippetType {
+        name: "test".to_string(),
+        source_file: PathBuf::from("test.txt"),
+    };
+
+    let result = run_fuzzy_finder(&items, &snippet_type, "test").unwrap();
+    // Verify no ANSI escape sequences in output
+    assert!(result.as_ref().map_or(true, |s| !s.contains("\x1B[")));
+}

@@ -41,8 +41,16 @@ _rsnip_complete() {
     done
 
     if [[ -n "${ctype}" && "${prev}" == "--input" ]]; then
+
+        # Save current terminal state
+        tput smcup
+
         local result
         result="$(rsnip complete --interactive --ctype "${ctype}" --input "${cur}")"
+
+        # Restore terminal state
+        tput rmcup
+
         if [[ -n "$result" ]]; then
             COMPREPLY=("$result")
             # Redraw line after fzf closes

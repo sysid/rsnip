@@ -132,16 +132,17 @@ pub fn run_fuzzy_finder(
 
     // Use unbounded channel to prevent potential deadlock
     let (tx_sink, rx_reader): (SkimItemSender, SkimItemReceiver) = unbounded();
-    trace!("Channel created"); // Debug
-
     for item in skim_items {
         tx_sink.send(item)?;
     }
     drop(tx_sink); // Close sender after all items sent
 
-    let mut stdout = std::io::stdout();
+    let mut stderr = std::io::stderr();  // this is the key for proper terminal cleanup
     let selected = Skim::run_with(&options, Some(rx_reader))
         .map(|out| {
+            // Always clean up terminal state after Skim closes
+            execute!(stderr, Clear(ClearType::FromCursorUp)).ok();
+
             match out.final_key {
                 Key::Ctrl('e') => {
                     let selected_items = out.selected_items.iter()
@@ -155,7 +156,6 @@ pub fn run_fuzzy_finder(
 
                     if let Some(item) = selected_items.first() {
                         debug!("Opening editor for: {}", item.display_text);
-                        execute!(stdout, Clear(ClearType::FromCursorDown)).ok();
                     }
                     None
                 }
@@ -168,5 +168,8 @@ pub fn run_fuzzy_finder(
             }
         })
         .unwrap_or_default();
+
+    // Add additional terminal cleanup just in case
+    // execute!(stdout, Clear(ClearType::FromCursorDown)).ok();
     Ok(selected.map(|s| s.split('\t').next().unwrap_or("").to_string()))
 }
