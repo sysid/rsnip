@@ -1,128 +1,135 @@
-# rsnip
+# RSnip: Fast & Flexible Text Snippets 🚀
 
-A powerful command-line snippet manager with fuzzy search capabilities, written in Rust.
+RSnip is a command-line text snippet manager built in Rust that helps you save and reuse frequently used text snippets with powerful templating capabilities.
 
-## Features
+[![CI Status](https://img.shields.io/github/workflow/status/yourusername/rsnip/CI)](https://github.com/yourusername/rsnip/actions)
+[![Crates.io](https://img.shields.io/crates/v/rsnip)](https://crates.io/crates/rsnip)
+[![License](https://img.shields.io/crates/l/rsnip)](LICENSE)
 
-- 🔍 Fuzzy search with interactive selection
-- 📋 Direct clipboard integration
-- ⚡ Fast and memory efficient
-- 🛠️ Shell completion support (bash)
-- 📝 System editor integration ($EDITOR)
+## 🌟 Features
 
-## Installation
+- **Multiple Snippet Types**: Organize snippets into different categories (shell commands, code snippets, etc.)
+- **Fuzzy Search**: Fast fuzzy finding with interactive selection using fzf-style interface
+- **Shell Integration**: Tab completion for your snippets in bash
+- **Dynamic Templates**: Support for dynamic content using Jinja2-style templates
+- **Shell-friendly**: Direct shell integration with aliases and completions
+- **Configurable**: TOML-based configuration with multiple config file locations
+- **Fast**: Written in Rust for optimal performance
 
-### From Source
+## 🚀 Quick Start
 
-```bash
-git clone https://github.com/yourusername/rsnip.git
-cd rsnip
-cargo install --path .
-```
-
-### Configuration
-
-rsnip looks for configuration in the following locations (in order of precedence):
-1. `~/.config/rsnip/config.toml`
-2. `/etc/rsnip/config.toml`
-
-Example configuration:
-
-```toml
-[snippet_types.general]
-source_file = "~/.config/rsnip/general_snippets.txt"
-description = "General text snippets"
-
-[snippet_types.shell]
-source_file = "~/.config/rsnip/shell_snippets.txt"
-description = "Shell command snippets"
-```
-
-## Usage
-
-### Basic Commands
+### Installation
 
 ```bash
-# Show help
-rsnip --help
+cargo install rsnip
+```
 
-# List available snippet types
-rsnip types
+### Basic Usage
 
-# Edit snippets (opens in your $EDITOR)
-rsnip edit --ctype general
+1. Create a snippet:
+```bash
+rsnip edit --ctype shell  # Opens your default editor
+```
 
-# Find completions interactively
-rsnip complete --ctype general --interactive
+2. Add some snippets in the format:
+```
+--- greeting
+Hello {{ env_USER }}!
+---
+
+--- backup
+tar -czf backup-{{ current_date|strftime('%Y%m%d') }}.tar.gz ./
+---
+```
+
+3. Use your snippets:
+```bash
+# List available snippets
+rsnip list --ctype shell
 
 # Copy a snippet to clipboard
-rsnip copy --ctype general --input "my-snippet"
+rsnip copy --ctype shell --input greeting
 
-# Show version and configuration info
-rsnip --info
+# Interactive fuzzy search
+rsnip complete --ctype shell --interactive
 ```
 
-### Debug Levels
+### Shell Integration
 
-Use `-d` flags to increase debug verbosity:
-- `-d`: Info level
-- `-dd`: Debug level
-- `-ddd`: Trace level
-
-### Shell Completion
-
-To enable shell completion for bash:
-
+Add to your `.bashrc`:
 ```bash
+# Optional: Add convenient alias
+alias ,="rsnip copy --ctype shell --input"
+
+# Enable tab completion
 source /path/to/rsnip.bash
 ```
 
-## Snippet File Format
+Now you can use:
+```bash
+, back<tab>  # Will fuzzy-find and complete 'backup'
+```
 
-Snippets are stored in a simple text format:
+## ⚙️ Configuration
 
-```text
---- snippet-name
-This is the content of the snippet
-It can span multiple lines
----
+RSnip looks for configuration in the following locations:
+- `~/.config/rsnip/config.toml`
+- `~/.rsnip/config.toml`
+- `/etc/rsnip/config.toml`
 
---- another-snippet
-Single line content
+Example configuration:
+```toml
+[snippet_types.shell]
+source_file = "~/.config/rsnip/shell_snippets.txt"
+description = "Shell command snippets"
+
+[snippet_types.git]
+source_file = "~/.config/rsnip/git_snippets.txt"
+description = "Git commands and workflows"
+```
+
+## 🛠️ Template Features
+
+RSnip supports Jinja2-style templates with several built-in filters:
+
+- `strftime`: Format dates - `{{ current_date|strftime('%Y-%m-%d') }}`
+- `add_days`: Add days to date - `{{ current_date|add_days(7) }}`
+- `subtract_days`: Subtract days - `{{ current_date|subtract_days(7) }}`
+
+Environment variables are available as `env_VARNAME`:
+```
+--- path
+Current path is: {{ env_PATH }}
 ---
 ```
 
-## Development
+## 🤝 Contributing
 
-### Prerequisites
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-- Rust 1.70 or higher
-- Cargo
-
-### Building
+### Development
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/rsnip
+cd rsnip
+
+# Run tests
+cargo test
+
+# Build in release mode
 cargo build --release
 ```
 
-### Running Tests
+## License
 
-```bash
-make test
-```
-
-### Debug Logging
-
-Set the `RUST_LOG` environment variable for additional debug output:
-
-```bash
-RUST_LOG=debug cargo run
-```
-
-## Contributing
+This project is licensed under the BSD 3 License - see the LICENSE file for details.
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the BSD 3 License - see the LICENSE file for details.
+## 🙏 Acknowledgments
+
+- Inspired by various snippet managers and completion tools
+- Built with Rust and several awesome crates including clap, minijinja, and skim
