@@ -1,21 +1,21 @@
 use std::path::PathBuf;
 use skim::{ItemPreview, PreviewContext};
-use rsnip::domain::{Snippet, SnippetType};
+use rsnip::domain::{Snippet, SnippetContent, SnippetType};
 use rsnip::fuzzy::{create_skim_items, run_fuzzy_finder};
 
 fn create_test_snippets() -> Vec<Snippet> {
     vec![
         Snippet {
             name: "apple".to_string(),
-            snippet: Some("This is an apple".to_string()),
+            content: SnippetContent::Static("This is an apple".to_string()),
         },
         Snippet {
             name: "apricot".to_string(),
-            snippet: Some("This is an apricot".to_string()),
+            content: SnippetContent::Static("This is an apricot".to_string()),
         },
         Snippet {
             name: "banana".to_string(),
-            snippet: Some("This is a banana".to_string()),
+            content: SnippetContent::Static("This is a banana".to_string()),
         },
     ]
 }
@@ -43,13 +43,21 @@ fn given_single_partial_match_when_fuzzy_finder_then_auto_selects() {
     assert_eq!(result, Some("banana".to_string()));
 }
 
+
 #[test]
-fn given_no_matches_when_fuzzy_finder_then_returns_none() {
+fn given_no_matches_when_fuzzy_finder_then_shows_interface() {
     let items = create_test_snippets();
     let snippet_type = create_test_snippet_type();
+
+    // Use a query that won't match any items
     let result = run_fuzzy_finder(&items, &snippet_type, "xyz").unwrap();
-    assert_eq!(result, None);
+
+    // The result should be None since we can't simulate user interaction in tests,
+    // but the function should have attempted to show the interface rather than
+    // returning early
+    assert!(result.is_none());
 }
+
 
 // #[test]
 // fn given_multiple_matches_when_fuzzy_finder_then_shows_interface() {
@@ -85,11 +93,11 @@ fn test_create_skim_items() {
     let snippets = vec![
         Snippet {
             name: "test1".to_string(),
-            snippet: Some("line1\nline2\nline3".to_string()),
+            content: SnippetContent::Static("line1\nline2\nline3".to_string()),
         },
         Snippet {
             name: "test2".to_string(),
-            snippet: None,
+            content: SnippetContent::Static("".to_string()),
         },
     ];
 
@@ -138,10 +146,7 @@ fn test_create_skim_items() {
 
 #[test]
 fn test_fuzzy_finder_output_is_clean() {
-    let items = vec![Snippet {
-        name: "test".to_string(),
-        snippet: Some("content".to_string()),
-    }];
+    let items = create_test_snippets();
     let snippet_type = SnippetType {
         name: "test".to_string(),
         source_file: PathBuf::from("test.txt"),

@@ -5,3 +5,4 @@ pub mod fuzzy;
 pub mod cli;
 pub mod config;
 pub mod path_utils;
+pub mod template;

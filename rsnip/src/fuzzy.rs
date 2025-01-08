@@ -1,4 +1,4 @@
-use crate::domain::Snippet;
+use crate::domain::{Snippet, SnippetContent};
 use crate::domain::SnippetType;
 use anyhow::Result;
 use crossterm::execute;
@@ -34,29 +34,30 @@ pub fn create_skim_items(items: &[Snippet], _: &SnippetType) -> Vec<Arc<dyn Skim
     let mut snippet_items = Vec::new();
 
     for item in items {
-        // For display text, show name and first line of snippet if available
-        let display_text = item.snippet.as_ref().map_or_else(
-            || item.name.clone(),
-            |desc| format!("{}\t{}", item.name, desc.lines().next().unwrap_or("")),
-        );
+        // Get content as string
+        let content_str = match &item.content {
+            SnippetContent::Static(s) => s,
+            SnippetContent::Template { source, .. } => source,
+        };
 
-        // For preview, show full snippet content
+        // For display text, show name and first line of content if available
+        let display_text = if content_str.is_empty() {
+            item.name.clone()
+        } else {
+            format!("{}\t{}", item.name, content_str.lines().next().unwrap_or(""))
+        };
+
+        // For preview, show full content
         let preview = format!(
             "Name: {}\nContent:\n{}",
             item.name,
-            item.snippet
-                .as_ref()
-                .map_or_else(|| String::from("No content"), |content| content.clone())
+            if content_str.is_empty() { "No content" } else { content_str }
         );
 
-        // Create skim item with line number tracking
-        let skim_item = SnippetItem {
+        snippet_items.push(Arc::new(SnippetItem {
             display_text,
             preview,
-        };
-
-        snippet_items.push(Arc::new(skim_item) as Arc<dyn SkimItem>);
-
+        }) as Arc<dyn SkimItem>);
     }
 
     snippet_items
@@ -84,20 +85,16 @@ pub fn run_fuzzy_finder(
         }
     }
 
-    // If we have a non-empty query, check for matches before launching UI
+// If we have a non-empty query, check for exact match first
     if !initial_query.is_empty() {
-        let matcher = SkimMatcherV2::default();
-        // First check if there are ANY matches
-        let has_any_matches = items.iter().any(|item| {
-            matcher.fuzzy(&item.name, initial_query, false).is_some()
-        });
-
-        if !has_any_matches {
-            debug!("No fuzzy matches found for query: {}", initial_query);
-            return Ok(None);
+        // Check for exact match first
+        if let Some(exact) = items.iter().find(|i| i.name == initial_query) {
+            debug!("Found exact match: {}", exact.name);
+            return Ok(Some(exact.name.clone()));
         }
 
-        // Then collect matches if needed for single-match case
+        let matcher = SkimMatcherV2::default();
+        // Then collect all fuzzy matches
         let matches: Vec<_> = items
             .iter()
             .filter(|item| matcher.fuzzy(&item.name, initial_query, false).is_some())
@@ -105,12 +102,14 @@ pub fn run_fuzzy_finder(
 
         debug!("Found {} fuzzy matches", matches.len());
 
+        // If exactly one fuzzy match, return it
         if matches.len() == 1 {
             debug!("Single fuzzy match found: {}", matches[0].name);
             return Ok(Some(matches[0].name.clone()));
         }
 
-        debug!("Multiple matches found, launching UI");
+        // For no matches or multiple matches, continue to fuzzy finder UI
+        debug!("Launching UI with {} matches", matches.len());
     }
 
     let options = SkimOptionsBuilder::default()

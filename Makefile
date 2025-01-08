@@ -42,11 +42,9 @@ test:  ## test
 test-trace:  ## test-trace: show traces (would not be shown due to fzf interactive mode)
 	rsnip/target/debug/rsnip -ddd complete --ctype mytype --input app --interactive
 
-#.PHONY: source
-#source:  ## source
-	## ~/.bashrc
-	## source /path/to/mytool.bash
-
+.PHONY: test-fzf-interactive_1
+test-fzf-interactive_1:  ## test-fzf-interactive_1
+	pushd $(pkg_src) && cargo test --color=always --package rsnip --test fuzzy given_no_matches_when_fuzzy_finder_then_shows_interface
 
 ################################################################################
 # Building, Deploying \

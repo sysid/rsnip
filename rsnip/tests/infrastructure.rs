@@ -5,7 +5,7 @@ use tempfile::{tempdir, NamedTempFile};
 use rsnip::cli::args::{Cli, Commands};
 use rsnip::cli::commands::execute_command;
 use rsnip::config::{Settings, SnippetTypeConfig};
-use rsnip::domain::Snippet;
+use rsnip::domain::{Snippet, SnippetContent};
 use rsnip::infrastructure::parse_snippets_file;
 
 #[test]
@@ -46,28 +46,28 @@ this is other
         snippets[0],
         Snippet {
             name: "apple".to_string(),
-            snippet: Some("this is green\nand nothing else".to_string())
+            content: SnippetContent::Static("this is green\nand nothing else".to_string())
         }
     );
     assert_eq!(
         snippets[1],
         Snippet {
             name: "aple".to_string(),
-            snippet: Some("this is green2".to_string())
+            content: SnippetContent::Static("this is green2".to_string())
         }
     );
     assert_eq!(
         snippets[2],
         Snippet {
             name: "banana".to_string(),
-            snippet: Some("this is yellow".to_string())
+            content: SnippetContent::Static("this is yellow".to_string())
         }
     );
     assert_eq!(
         snippets[3],
         Snippet {
             name: "else".to_string(),
-            snippet: Some("this is other".to_string())
+            content: SnippetContent::Static("this is other".to_string())
         }
     );
 }
@@ -95,7 +95,7 @@ line2
         snippets[0],
         Snippet {
             name: "apple".to_string(),
-            snippet: Some("line1\nline2\n".to_string())
+            content: SnippetContent::Static("line1\nline2\n".to_string())
         }
     );
 }
@@ -137,7 +137,7 @@ random trailing text
         snippets[0],
         Snippet {
             name: "apple".to_string(),
-            snippet: Some("line".to_string())
+            content: SnippetContent::Static("line".to_string())
         }
     );
 }

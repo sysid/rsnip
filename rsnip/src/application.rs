@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use std::{cmp::Reverse};
 use tracing::instrument;
+use crate::template::TemplateEngine;
 
 /// Finds completions interactively using fuzzy finder
 #[instrument(level = "debug")]
@@ -74,18 +75,18 @@ pub fn copy_snippet_to_clipboard(
     completion_type: &SnippetType,
     input: &str,
     exact: bool,
-) -> Result<Option<Snippet>> {
+) -> Result<Option<(Snippet, String)>> {
     let item = if exact {
         find_completion_exact(completion_type, input)?
     } else {
         find_completion_fuzzy(completion_type, input)?
     };
 
-    if let Some(completion_item) = item {
-        if let Some(snippet) = &completion_item.snippet {
-            infrastructure::copy_to_clipboard(snippet)?;
-        }
-        Ok(Some(completion_item))
+    if let Some(completion_item) = item.clone() {
+        let engine = TemplateEngine::new();
+        let rendered = engine.render(&completion_item.content)?;
+        infrastructure::copy_to_clipboard(&rendered)?;
+        Ok(Some((completion_item, rendered)))
     } else {
         Ok(None)
     }

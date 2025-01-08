@@ -1,4 +1,4 @@
-use crate::domain::{Snippet, SnippetType};
+use crate::domain::{Snippet, SnippetContent, SnippetType};
 use anyhow::{anyhow, Context, Result};
 use arboard::Clipboard;
 use crossterm::style::Stylize;
@@ -32,13 +32,10 @@ fn parse_content(content: &str) -> Vec<Snippet> {
         if trimmed.starts_with("--- ") {
             if let Some(name) = current_name.take() {
                 let snippet_text = current_lines.join("\n");
+                // Use SnippetContent::new() to detect templates
                 snippets.push(Snippet {
                     name,
-                    snippet: if snippet_text.is_empty() {
-                        None
-                    } else {
-                        Some(snippet_text)
-                    },
+                    content: SnippetContent::new(snippet_text),
                 });
             }
 
@@ -48,13 +45,10 @@ fn parse_content(content: &str) -> Vec<Snippet> {
         } else if trimmed == "---" {
             if let Some(name) = current_name.take() {
                 let snippet_text = current_lines.join("\n");
+                // Use SnippetContent::new() to detect templates
                 snippets.push(Snippet {
                     name,
-                    snippet: if snippet_text.is_empty() {
-                        None
-                    } else {
-                        Some(snippet_text)
-                    },
+                    content: SnippetContent::new(snippet_text),
                 });
             }
             current_lines.clear();
@@ -65,13 +59,10 @@ fn parse_content(content: &str) -> Vec<Snippet> {
 
     if let Some(name) = current_name.take() {
         let snippet_text = current_lines.join("\n");
+        // Use SnippetContent::new() to detect templates
         snippets.push(Snippet {
             name,
-            snippet: if snippet_text.is_empty() {
-                None
-            } else {
-                Some(snippet_text)
-            },
+            content: SnippetContent::new(snippet_text),
         });
     }
 

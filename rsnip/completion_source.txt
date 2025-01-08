@@ -15,3 +15,15 @@ this is yellow
 --- else
 this is other
 ---
+
+--- greeting
+Hello {{ env_USER }}!
+---
+
+--- next_week
+Due date: {{ current_date|add_days(7)|strftime('%Y-%m-%d') }}
+---
+
+--- last_week
+Completed on: {{ current_date|subtract_days(7)|strftime('%Y-%m-%d') }}
+---

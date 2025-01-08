@@ -74,12 +74,12 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             let snippet_type = get_snippet_type(config, ctype)?;
 
             match copy_snippet_to_clipboard(&snippet_type, input, true)? {
-                Some(snippet) => {
+                Some((snippet, rendered_content)) => {
                     println!(
                         "{}",
                         format!("Snippet '{}' copied to clipboard.\n", snippet.name).green()
                     );
-                    println!("{}", snippet.snippet.unwrap_or_default());
+                    println!("{}", rendered_content);
                     Ok(())
                 }
                 None => Err(anyhow!("No matching snippet found for '{}'", input)),
