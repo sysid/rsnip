@@ -15,7 +15,7 @@ _rsnip_complete() {
     else
         cmd=""
         # List of available commands
-        local commands="copy edit"
+        local commands="copy edit list types"
 
         # If completing a command
         if [[ ${COMP_CWORD} -eq 1 ]]; then

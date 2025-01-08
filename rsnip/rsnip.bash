@@ -9,7 +9,7 @@ _rsnip_complete() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # List of available commands
-    local commands="copy edit"
+    local commands="copy edit list types"
 
     # If completing a command
     if [[ ${COMP_CWORD} -eq 1 ]]; then

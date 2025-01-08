@@ -25,6 +25,12 @@ pub struct Cli {
 pub enum Commands {
     /// List available snippet types
     Types,
+    /// List all snippets
+    List {
+        /// Type of snippets to list
+        #[arg(long)]
+        ctype: Option<String>,
+    },
     /// Edit snippet file in system editor
     Edit {
         /// Type of completion

@@ -1,17 +1,41 @@
-use std::fs;
 use crate::application::{
     copy_snippet_to_clipboard, find_completion_exact, find_completion_interactive,
 };
 use crate::cli::args::{Cli, Commands};
 use anyhow::{anyhow, Result};
 use crossterm::style::Stylize;
+use std::fs;
 
 use crate::config::{get_snippet_type, Settings};
 use crate::infrastructure;
+use crate::infrastructure::parse_snippets_file;
 use crate::path_utils::expand_path;
 
 pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
     match &cli.command {
+        Some(Commands::List { ctype }) => {
+            let ctype = ctype.as_deref().unwrap_or("default");
+            let snippet_type = get_snippet_type(config, ctype)?;
+            let snippets = parse_snippets_file(&snippet_type.source_file)?;
+
+            println!("\nSnippets for type '{}':", ctype);
+            for snippet in snippets {
+                let preview = snippet
+                    .content
+                    .get_content()
+                    .lines()
+                    .next()
+                    .unwrap_or("")
+                    .trim();
+
+                if preview.is_empty() {
+                    println!("  {}", snippet.name);
+                } else {
+                    println!("  {}: {}", snippet.name, preview);
+                }
+            }
+            Ok(())
+        }
         Some(Commands::Edit { ctype }) => {
             let ctype = ctype.as_deref().unwrap_or("default");
             let snippet_type = get_snippet_type(config, ctype)?;
@@ -28,7 +52,10 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
                     "{}",
                     format!("Creating new snippet file: {}", expanded_path.display()).green()
                 );
-                fs::write(&expanded_path, "# Snippet file for type: ".to_string() + ctype)?;
+                fs::write(
+                    &expanded_path,
+                    "# Snippet file for type: ".to_string() + ctype,
+                )?;
             }
 
             infrastructure::edit_snips_file(&snippet_type, Some(1usize))?;
@@ -88,4 +115,3 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
         None => Ok(()),
     }
 }
-
