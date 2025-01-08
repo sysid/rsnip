@@ -14,9 +14,6 @@ pub enum SnippetContent {
     Template {
         source: String,
         // We don't clone the compiled template, just store it for performance
-        #[cfg(test)]
-        compiled: Option<Template<'static, 'static>>,
-        #[cfg(not(test))]
         compiled: Option<Template<'static, 'static>>,
     }
 }

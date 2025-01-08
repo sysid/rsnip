@@ -45,6 +45,7 @@ fn given_single_partial_match_when_fuzzy_finder_then_auto_selects() {
 
 
 #[test]
+#[ignore = "This test is interactive via Makefile"]
 fn given_no_matches_when_fuzzy_finder_then_shows_interface() {
     let items = create_test_snippets();
     let snippet_type = create_test_snippet_type();
@@ -145,6 +146,7 @@ fn test_create_skim_items() {
 }
 
 #[test]
+#[ignore = "does not work in IDE"]
 fn test_fuzzy_finder_output_is_clean() {
     let items = create_test_snippets();
     let snippet_type = SnippetType {
