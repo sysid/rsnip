@@ -119,14 +119,14 @@ pub fn run_fuzzy_finder(
     }
 
     let options = SkimOptionsBuilder::default()
-        .height("20%".to_string())
+        .height("10%".to_string())
         .multi(false)
         .ansi(true)
         .bind(vec![
             "ctrl-e:accept".to_string(),
             "enter:accept".to_string(),
         ])
-        .preview_window("right:70%:wrap:border".to_string())
+        .preview_window("right:75%:wrap:border".to_string())
         // .preview(Some("--preview-window=right:70%:wrap:border --preview={}".to_string()))
         .preview(Some("".to_string()))
         // These three options are key for auto-selection:
