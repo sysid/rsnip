@@ -104,7 +104,7 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
                 Some((snippet, rendered_content)) => {
                     println!(
                         "{}",
-                        format!("Snippet '{}' copied to clipboard.\n", snippet.name).green()
+                        format!("'{}' copied to clipboard.\n", snippet.name).green()
                     );
                     println!("{}", rendered_content);
                     Ok(())

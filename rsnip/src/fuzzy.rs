@@ -1,8 +1,11 @@
-use crate::domain::{Snippet, SnippetContent};
 use crate::domain::SnippetType;
+use crate::domain::{Snippet, SnippetContent};
 use anyhow::Result;
-use crossterm::execute;
-use crossterm::terminal::{Clear, ClearType};
+use crossterm::{
+    execute,
+    style::{Stylize},
+    terminal::{Clear, ClearType},
+};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use skim::{prelude::*, Skim};
 use std::sync::Arc;
@@ -21,11 +24,13 @@ impl SkimItem for SnippetItem {
     }
 
     fn preview(&self, _context: PreviewContext) -> ItemPreview {
-        ItemPreview::Text(self.preview.clone())
+        ItemPreview::AnsiText(self.preview.clone())
     }
 
     fn output(&self) -> Cow<str> {
-        self.text()
+        // self.text()
+        // Extract just the name part before the tab and convert to owned string
+        Cow::Owned(self.text().split('\t').next().unwrap_or("").to_string())
     }
 }
 
@@ -40,18 +45,19 @@ pub fn create_skim_items(items: &[Snippet], _: &SnippetType) -> Vec<Arc<dyn Skim
             SnippetContent::Template { source, .. } => source,
         };
 
-        // For display text, show name and first line of content if available
-        let display_text = if content_str.is_empty() {
-            item.name.clone()
-        } else {
-            format!("{}\t{}", item.name, content_str.lines().next().unwrap_or(""))
-        };
+        let display_text = item.name.clone();
 
-        // For preview, show full content
+        // Format preview with colored headers and proper spacing
         let preview = format!(
-            "Name: {}\nContent:\n{}",
+            "{}: {}\n\n{}:\n{}",
+            "Name".green().bold(),
             item.name,
-            if content_str.is_empty() { "No content" } else { content_str }
+            "Content".cyan().bold(),
+            if content_str.is_empty() {
+                "No content"
+            } else {
+                content_str
+            }
         );
 
         snippet_items.push(Arc::new(SnippetItem {
@@ -113,13 +119,16 @@ pub fn run_fuzzy_finder(
     }
 
     let options = SkimOptionsBuilder::default()
-        .height("50%".to_string())
+        .height("20%".to_string())
         .multi(false)
-        .preview(Some("right:50%".to_string()))
+        .ansi(true)
         .bind(vec![
             "ctrl-e:accept".to_string(),
             "enter:accept".to_string(),
         ])
+        .preview_window("right:70%:wrap:border".to_string())
+        // .preview(Some("--preview-window=right:70%:wrap:border --preview={}".to_string()))
+        .preview(Some("".to_string()))
         // These three options are key for auto-selection:
         .filter(Some(initial_query.to_string())) // Immediately apply filter
         .select_1(true) // Auto-select if single match
