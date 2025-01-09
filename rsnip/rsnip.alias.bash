@@ -11,9 +11,8 @@ _rsnip_complete() {
 
     # Detect if we're using the alias or full command
     if [[ ${COMP_WORDS[0]} == "," ]]; then
-        cmd="shell"  # Default type for the alias
+        :
     else
-        cmd=""
         # List of available commands
         local commands="copy edit list types"
 

@@ -1,7 +1,8 @@
-use clap::{Parser};
+use clap::Parser;
 use crossterm::style::Stylize;
 use rsnip::cli::args::Cli;
 use rsnip::cli::commands::execute_command;
+use rsnip::complete::generate_completion_script;
 use rsnip::config::Settings;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::filter::filter_fn;
@@ -12,6 +13,17 @@ use tracing_subscriber::{fmt, Layer};
 
 fn main() {
     let cli = Cli::parse();
+
+    if let Some(shell) = cli.generator {
+        if let Err(e) = generate_completion_script(shell, std::io::stdout()) {
+            eprintln!(
+                "{}",
+                format!("Error generating completion script: {}", e).red()
+            );
+            std::process::exit(1);
+        }
+        return;
+    }
 
     // Initialize configuration
     let config = match Settings::new() {
