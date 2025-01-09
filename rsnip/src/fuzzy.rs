@@ -3,7 +3,7 @@ use crate::domain::{Snippet, SnippetContent};
 use anyhow::Result;
 use crossterm::{
     execute,
-    style::{Stylize},
+    style::Stylize,
     terminal::{Clear, ClearType},
 };
 use fuzzy_matcher::skim::SkimMatcherV2;
@@ -91,7 +91,7 @@ pub fn run_fuzzy_finder(
         }
     }
 
-// If we have a non-empty query, check for exact match first
+    // If we have a non-empty query, check for exact match first
     if !initial_query.is_empty() {
         // Check for exact match first
         if let Some(exact) = items.iter().find(|i| i.name == initial_query) {
@@ -131,6 +131,7 @@ pub fn run_fuzzy_finder(
         .preview(Some("".to_string()))
         // These three options are key for auto-selection:
         .filter(Some(initial_query.to_string())) // Immediately apply filter
+        .query(Some(initial_query.to_string())) // Pre-populate search box
         .select_1(true) // Auto-select if single match
         .exit_0(true) // Exit if no matches
         .build()?;
@@ -145,7 +146,7 @@ pub fn run_fuzzy_finder(
     }
     drop(tx_sink); // Close sender after all items sent
 
-    let mut stderr = std::io::stderr();  // this is the key for proper terminal cleanup
+    let mut stderr = std::io::stderr(); // this is the key for proper terminal cleanup
     let selected = Skim::run_with(&options, Some(rx_reader))
         .map(|out| {
             // Always clean up terminal state after Skim closes
@@ -153,7 +154,9 @@ pub fn run_fuzzy_finder(
 
             match out.final_key {
                 Key::Ctrl('e') => {
-                    let selected_items = out.selected_items.iter()
+                    let selected_items = out
+                        .selected_items
+                        .iter()
                         .filter_map(|selected_item| {
                             (**selected_item)
                                 .as_any()
@@ -167,11 +170,10 @@ pub fn run_fuzzy_finder(
                     }
                     None
                 }
-                Key::Enter => {
-                    out.selected_items
-                        .first()
-                        .map(|item| item.output().to_string())
-                }
+                Key::Enter => out
+                    .selected_items
+                    .first()
+                    .map(|item| item.output().to_string()),
                 _ => None,
             }
         })
