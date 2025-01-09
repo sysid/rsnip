@@ -62,7 +62,7 @@ Add to your `.bashrc`:
 alias ,="rsnip copy --ctype shell --input"
 
 # Enable tab completion
-source /path/to/rsnip.bash
+source <(rsnip --generate bash)
 ```
 
 Now you can use:
