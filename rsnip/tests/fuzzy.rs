@@ -90,7 +90,8 @@ fn given_empty_items_when_fuzzy_finder_then_returns_none() {
 }
 
 #[test]
-fn test_create_skim_items() {
+fn given_snippets_when_creating_skim_items_then_returns_formatted_items() {
+    // Arrange
     let snippets = vec![
         Snippet {
             name: "test1".to_string(),
@@ -102,13 +103,23 @@ fn test_create_skim_items() {
         },
     ];
 
-    let snippet_type = create_test_snippet_type();
+    let snippet_type = SnippetType {
+        name: "test".to_string(),
+        source_file: PathBuf::from("test.txt"),
+    };
+
+    // Act
     let items = create_skim_items(&snippets, &snippet_type);
 
-    assert_eq!(items[0].output(), "test1\tline1");
-    assert_eq!(items[1].output(), "test2");
+    // Assert
+    // Check that we get the correct number of items
+    assert_eq!(items.len(), 2);
 
-    // Create a preview context for testing
+    // Test output (name) for both items
+    assert_eq!(items[0].text(), "test1");
+    assert_eq!(items[1].text(), "test2");
+
+    // Create a preview context
     let preview_context = PreviewContext {
         query: "",
         cmd_query: "",
@@ -120,13 +131,16 @@ fn test_create_skim_items() {
         selections: &[],
     };
 
-    if let ItemPreview::Text(preview) = items[0].preview(preview_context) {
+    // Test preview content
+    if let ItemPreview::AnsiText(preview) = items[0].preview(preview_context) {
         assert!(preview.contains("line1\nline2\nline3"));
+        assert!(preview.contains("Name"));
+        assert!(preview.contains("Content"));
     } else {
-        panic!("Expected Text preview");
+        panic!("Expected AnsiText preview");
     }
 
-    // Create a preview context for testing
+    // Create a preview context
     let preview_context = PreviewContext {
         query: "",
         cmd_query: "",
@@ -138,12 +152,15 @@ fn test_create_skim_items() {
         selections: &[],
     };
 
-    if let ItemPreview::Text(preview) = items[1].preview(preview_context) {
+    if let ItemPreview::AnsiText(preview) = items[1].preview(preview_context) {
         assert!(preview.contains("No content"));
+        assert!(preview.contains("Name"));
+        assert!(preview.contains("Content"));
     } else {
-        panic!("Expected Text preview");
+        panic!("Expected AnsiText preview");
     }
 }
+
 
 #[test]
 #[ignore = "does not work in IDE"]
