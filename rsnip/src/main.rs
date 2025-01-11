@@ -14,6 +14,12 @@ use tracing_subscriber::{fmt, Layer};
 fn main() {
     let cli = Cli::parse();
 
+    // Handle generate-config before any other operations
+    if cli.generate_config {
+        println!("{}", include_str!("default_config.toml"));
+        return;
+    }
+
     if let Some(shell) = cli.generator {
         if let Err(e) = generate_completion_script(shell, std::io::stdout()) {
             eprintln!(
@@ -41,6 +47,11 @@ fn main() {
         }
         if let Some(v) = Cli::command().get_version() {
             println!("VERSION: {}", v);
+        }
+        // Print config file location
+        match &config.active_config_path {
+            Some(path) => println!("CONFIG: {}", path.display()),
+            None => println!("CONFIG: Using default embedded configuration"),
         }
         // Print available snippet types
         println!("\nAvailable snippet types:");

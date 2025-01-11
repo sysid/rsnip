@@ -1,11 +1,11 @@
 // configuration
 use crate::domain::SnippetType;
+use crate::path_utils::expand_path;
 use anyhow::Result;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tracing::{debug, instrument};
-use crate::path_utils::expand_path;
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
@@ -13,6 +13,9 @@ pub struct Settings {
     pub snippet_types: HashMap<String, SnippetTypeConfig>,
     #[serde(default = "default_config_paths")]
     pub config_paths: Vec<PathBuf>,
+    // Track which config file is active
+    #[serde(skip)]
+    pub active_config_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -27,6 +30,7 @@ impl Default for Settings {
         Self {
             snippet_types: default_snippet_types(),
             config_paths: default_config_paths(),
+            active_config_path: None,
         }
     }
 }
@@ -64,10 +68,15 @@ impl Settings {
             config::FileFormat::Toml,
         ));
 
-        // Try loading from config paths
+        // Try loading from config paths and track which one succeeded
+        let mut active_path = None;
         for path in default_config_paths() {
             debug!("Trying to load config from: {:?}", path);
-            builder = builder.add_source(config::File::from(path.as_path()).required(false));
+            if path.exists() {
+                builder = builder.add_source(config::File::from(path.as_path()));
+                active_path = Some(path.clone());
+                break; // Use first found config file
+            }
         }
 
         // Override with environment variables
@@ -79,6 +88,9 @@ impl Settings {
 
         let config = builder.build()?;
         let mut settings: Settings = config.try_deserialize()?;
+
+        // Store the active config path
+        settings.active_config_path = active_path;
 
         // Expand paths in snippet types
         for config in settings.snippet_types.values_mut() {
@@ -96,12 +108,34 @@ impl Settings {
 // Update infrastructure.rs to use the new config
 #[instrument(level = "debug")]
 pub fn get_snippet_type(config: &Settings, name: &str) -> Result<SnippetType> {
-    let snippet_config = config
-        .get_snippet_type(name)
-        .ok_or_else(|| anyhow::anyhow!("Unknown snippet type: {}, update your configuration.", name))?;
+    let snippet_config = config.get_snippet_type(name).ok_or_else(|| {
+        anyhow::anyhow!("Unknown snippet type: {}, update your configuration.", name)
+    })?;
 
     Ok(SnippetType {
         name: name.to_string(),
         source_file: snippet_config.source_file,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn given_no_config_file_when_loading_then_uses_builtin() -> Result<()> {
+        // Act
+        let settings = Settings::new()?;
+
+        // Assert
+        assert!(settings.active_config_path.is_none(),
+            "Expected no active config path when using builtin config");
+        // Verify we got the default snippet types
+        assert!(settings.snippet_types.contains_key("general"),
+            "Expected default 'general' snippet type from builtin config");
+        assert!(settings.snippet_types.contains_key("shell"),
+            "Expected default 'shell' snippet type from builtin config");
+
+        Ok(())
+    }
 }

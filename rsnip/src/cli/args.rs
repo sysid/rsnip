@@ -13,6 +13,10 @@ pub struct Cli {
     #[arg(long = "generate", value_enum)]
     pub generator: Option<Shell>,
 
+    /// Print default configuration to stdout
+    #[arg(long = "generate-config")]
+    pub generate_config: bool,
+
     /// Display version and configuration information
     #[arg(long = "info")]
     pub info: bool,
@@ -66,4 +70,16 @@ pub enum Commands {
         #[arg(long)]
         input: String,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    #[test]
+    fn given_generate_config_flag_when_parsing_then_sets_flag() {
+        let args = Cli::parse_from(["rsnip", "--generate-config"]);
+        assert!(args.generate_config);
+    }
 }
