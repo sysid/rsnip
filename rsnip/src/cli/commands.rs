@@ -107,10 +107,7 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
                         "Comments:".to_string().yellow(),
                         snippet.comments.join("\n"),
                     );
-                    println!(
-                        "{}",
-                        format!("'{}' -> clipboard:", snippet.name).green()
-                    );
+                    println!("{}", format!("'{}' -> clipboard:", snippet.name).green());
                     println!("{}", rendered_content);
                     Ok(())
                 }

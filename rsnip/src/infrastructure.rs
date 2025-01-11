@@ -2,10 +2,10 @@ use crate::domain::{Snippet, SnippetContent, SnippetType};
 use anyhow::{anyhow, Context, Result};
 use arboard::Clipboard;
 use crossterm::style::Stylize;
-use std::{env, fs};
 use std::path::Path;
-use tracing::instrument;
 use std::process::Command;
+use std::{env, fs};
+use tracing::instrument;
 
 // Embed default completions file at compile time
 const DEFAULT_COMPLETIONS: &str = include_str!("default_completions.txt");

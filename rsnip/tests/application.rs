@@ -2,9 +2,9 @@ use anyhow::Result;
 use rsnip::application::{copy_snippet_to_clipboard, find_completion_fuzzy};
 use rsnip::config::{get_snippet_type, Settings};
 use rsnip::domain::SnippetType;
+use rsnip::infrastructure::parse_snippets_file;
 use std::io::Write;
 use tempfile::NamedTempFile;
-use rsnip::infrastructure::parse_snippets_file;
 
 #[test]
 fn given_empty_input_when_finding_completion_then_returns_none() -> Result<()> {
@@ -56,7 +56,7 @@ fn given_snippet_without_description_when_copying_then_returns_some() -> Result<
 #[test]
 fn given_template_snippet_when_copying_then_returns_rendered_content() -> Result<()> {
     let mut tmp = NamedTempFile::new()?;
-    let template_content = "--- date\n{{current_date|strftime('%Y-%m-%d')}}\n---";  // Removed spaces around {{}}
+    let template_content = "--- date\n{{current_date|strftime('%Y-%m-%d')}}\n---"; // Removed spaces around {{}}
     println!("Debug - Writing template content: {}", template_content);
     writeln!(tmp, "{}", template_content)?;
 
@@ -77,10 +77,16 @@ fn given_template_snippet_when_copying_then_returns_rendered_content() -> Result
     assert_eq!(snippet.name, "date");
 
     let is_valid_date = rendered.trim().len() == 10
-        && rendered.trim().chars().all(|c| c.is_ascii_digit() || c == '-')
+        && rendered
+            .trim()
+            .chars()
+            .all(|c| c.is_ascii_digit() || c == '-')
         && rendered.matches('-').count() == 2;
 
-    assert!(is_valid_date, "Rendered date '{}' is not in YYYY-MM-DD format", rendered);
+    assert!(
+        is_valid_date,
+        "Rendered date '{}' is not in YYYY-MM-DD format",
+        rendered
+    );
     Ok(())
 }
-

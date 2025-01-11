@@ -15,7 +15,7 @@ pub enum SnippetContent {
         source: String,
         // We don't clone the compiled template, just store it for performance
         compiled: Option<Template<'static, 'static>>,
-    }
+    },
 }
 
 // Manual implementation of PartialEq that ignores the compiled template

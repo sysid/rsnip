@@ -1,9 +1,9 @@
-pub mod domain;
-pub mod infrastructure;
 pub mod application;
-pub mod fuzzy;
 pub mod cli;
+pub mod complete;
 pub mod config;
+pub mod domain;
+pub mod fuzzy;
+pub mod infrastructure;
 pub mod path_utils;
 pub mod template;
-pub mod complete;

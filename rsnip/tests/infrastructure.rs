@@ -1,12 +1,12 @@
-use std::collections::HashMap;
-use std::env;
-use std::io::Write;
-use tempfile::{tempdir, NamedTempFile};
 use rsnip::cli::args::{Cli, Commands};
 use rsnip::cli::commands::execute_command;
 use rsnip::config::{Settings, SnippetTypeConfig};
 use rsnip::domain::{Snippet, SnippetContent};
 use rsnip::infrastructure::parse_snippets_file;
+use std::collections::HashMap;
+use std::env;
+use std::io::Write;
+use tempfile::{tempdir, NamedTempFile};
 
 #[test]
 fn given_valid_snippet_file_when_parse_snippets_file_then_returns_correct_snippets() {
@@ -213,10 +213,10 @@ and nothing else
     assert_eq!(snippets.len(), 1);
     let snippet = &snippets[0];
     assert_eq!(snippet.name, "apple");
-    assert_eq!(snippet.comments, vec![
-        "This is a comment about apples",
-        "Another comment"
-    ]);
+    assert_eq!(
+        snippet.comments,
+        vec!["This is a comment about apples", "Another comment"]
+    );
     assert_eq!(
         snippet.content,
         SnippetContent::Static("this is green\nand nothing else".to_string())

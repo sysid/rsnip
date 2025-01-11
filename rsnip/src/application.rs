@@ -1,11 +1,11 @@
 use crate::domain::{Snippet, SnippetType};
-use crate::{fuzzy, infrastructure};
 use crate::infrastructure::parse_snippets_file;
+use crate::template::TemplateEngine;
+use crate::{fuzzy, infrastructure};
 use anyhow::{Context, Result};
 use fuzzy_matcher::skim::SkimMatcherV2;
-use std::{cmp::Reverse};
+use std::cmp::Reverse;
 use tracing::instrument;
-use crate::template::TemplateEngine;
 
 /// Finds completions interactively using fuzzy finder
 #[instrument(level = "debug")]
@@ -25,9 +25,7 @@ pub fn find_completion_interactive(
     let selected_item = fuzzy::run_fuzzy_finder(&items, completion_type, user_input)?;
 
     // Return the selected snippet
-    Ok(selected_item.and_then(|name| {
-        items.iter().find(|item| item.name == name).cloned()
-    }))
+    Ok(selected_item.and_then(|name| items.iter().find(|item| item.name == name).cloned()))
 }
 
 /// Find first matching completion non-interactively
