@@ -36,7 +36,13 @@ init-env:  ## init-env
 .PHONY: test
 test:  ## test
 	RUST_LOG=DEBUG pushd $(pkg_src) && cargo test -- --test-threads=1  # --nocapture
-	#RUST_LOG=DEBUG pushd $(pkg_src) && cargo test
+
+.PHONY: test-cicd
+test-cicd:  ## Run tests excluding clipboard-dependent tests for CI/CD
+	RUST_LOG=DEBUG pushd $(pkg_src) && cargo test -- --test-threads=1 \
+		--skip given_snippet_without_description_when_copying_then_returns_some \
+		--skip given_template_snippet_when_copying_then_returns_rendered_content
+
 
 .PHONY: test-trace
 test-trace:  ## test-trace: show traces (would not be shown due to fzf interactive mode)
