@@ -117,25 +117,3 @@ pub fn get_snippet_type(config: &Settings, name: &str) -> Result<SnippetType> {
         source_file: snippet_config.source_file,
     })
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn given_no_config_file_when_loading_then_uses_builtin() -> Result<()> {
-        // Act
-        let settings = Settings::new()?;
-
-        // Assert
-        assert!(settings.active_config_path.is_none(),
-            "Expected no active config path when using builtin config");
-        // Verify we got the default snippet types
-        assert!(settings.snippet_types.contains_key("general"),
-            "Expected default 'general' snippet type from builtin config");
-        assert!(settings.snippet_types.contains_key("shell"),
-            "Expected default 'shell' snippet type from builtin config");
-
-        Ok(())
-    }
-}

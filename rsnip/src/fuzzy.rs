@@ -48,17 +48,33 @@ pub fn create_skim_items(items: &[Snippet], _: &SnippetType) -> Vec<Arc<dyn Skim
         let display_text = item.name.clone();
 
         // Format preview with colored headers and proper spacing
-        let preview = format!(
-            "{}: {}\n\n{}:\n{}",
-            "Name".green().bold(),
-            item.name,
-            "Content".cyan().bold(),
-            if content_str.is_empty() {
-                "No content"
-            } else {
-                content_str
-            }
-        );
+        let preview = if item.comments.is_empty() {
+            format!(
+                "{}: {}\n\n{}:\n{}",
+                "Name".green().bold(),
+                item.name,
+                "Content".cyan().bold(),
+                if content_str.is_empty() {
+                    "No content"
+                } else {
+                    content_str
+                }
+            )
+        } else {
+            format!(
+                "{}: {}\n\n{}:\n{}\n\n{}:\n{}",
+                "Name".green().bold(),
+                item.name,
+                "Comments".yellow().bold(),
+                item.comments.join("\n"), // Indent continuation lines
+                "Content".cyan().bold(),
+                if content_str.is_empty() {
+                    "No content"
+                } else {
+                    content_str
+                }
+            )
+        };
 
         snippet_items.push(Arc::new(SnippetItem {
             display_text,

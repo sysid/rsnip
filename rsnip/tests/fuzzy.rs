@@ -1,21 +1,24 @@
-use std::path::PathBuf;
-use skim::{ItemPreview, PreviewContext};
 use rsnip::domain::{Snippet, SnippetContent, SnippetType};
 use rsnip::fuzzy::{create_skim_items, run_fuzzy_finder};
+use skim::{ItemPreview, PreviewContext};
+use std::path::PathBuf;
 
 fn create_test_snippets() -> Vec<Snippet> {
     vec![
         Snippet {
             name: "apple".to_string(),
             content: SnippetContent::Static("This is an apple".to_string()),
+            comments: Vec::new(), // Add empty comments vector
         },
         Snippet {
             name: "apricot".to_string(),
             content: SnippetContent::Static("This is an apricot".to_string()),
+            comments: Vec::new(),
         },
         Snippet {
             name: "banana".to_string(),
             content: SnippetContent::Static("This is a banana".to_string()),
+            comments: Vec::new(),
         },
     ]
 }
@@ -43,7 +46,6 @@ fn given_single_partial_match_when_fuzzy_finder_then_auto_selects() {
     assert_eq!(result, Some("banana".to_string()));
 }
 
-
 #[test]
 #[ignore = "This test is interactive via Makefile"]
 fn given_no_matches_when_fuzzy_finder_then_shows_interface() {
@@ -58,7 +60,6 @@ fn given_no_matches_when_fuzzy_finder_then_shows_interface() {
     // returning early
     assert!(result.is_none());
 }
-
 
 // #[test]
 // fn given_multiple_matches_when_fuzzy_finder_then_shows_interface() {
@@ -96,10 +97,12 @@ fn given_snippets_when_creating_skim_items_then_returns_formatted_items() {
         Snippet {
             name: "test1".to_string(),
             content: SnippetContent::Static("line1\nline2\nline3".to_string()),
+            comments: Vec::new(),
         },
         Snippet {
             name: "test2".to_string(),
             content: SnippetContent::Static("".to_string()),
+            comments: Vec::new(),
         },
     ];
 
@@ -160,7 +163,6 @@ fn given_snippets_when_creating_skim_items_then_returns_formatted_items() {
         panic!("Expected AnsiText preview");
     }
 }
-
 
 #[test]
 #[ignore = "does not work in IDE"]

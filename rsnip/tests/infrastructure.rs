@@ -46,28 +46,32 @@ this is other
         snippets[0],
         Snippet {
             name: "apple".to_string(),
-            content: SnippetContent::Static("this is green\nand nothing else".to_string())
+            content: SnippetContent::Static("this is green\nand nothing else".to_string()),
+            comments: vec![]
         }
     );
     assert_eq!(
         snippets[1],
         Snippet {
             name: "aple".to_string(),
-            content: SnippetContent::Static("this is green2".to_string())
+            content: SnippetContent::Static("this is green2".to_string()),
+            comments: vec![]
         }
     );
     assert_eq!(
         snippets[2],
         Snippet {
             name: "banana".to_string(),
-            content: SnippetContent::Static("this is yellow".to_string())
+            content: SnippetContent::Static("this is yellow".to_string()),
+            comments: vec![]
         }
     );
     assert_eq!(
         snippets[3],
         Snippet {
             name: "else".to_string(),
-            content: SnippetContent::Static("this is other".to_string())
+            content: SnippetContent::Static("this is other".to_string()),
+            comments: vec![]
         }
     );
 }
@@ -95,7 +99,8 @@ line2
         snippets[0],
         Snippet {
             name: "apple".to_string(),
-            content: SnippetContent::Static("line1\nline2\n".to_string())
+            content: SnippetContent::Static("line1\nline2\n".to_string()),
+            comments: vec![]
         }
     );
 }
@@ -137,7 +142,8 @@ random trailing text
         snippets[0],
         Snippet {
             name: "apple".to_string(),
-            content: SnippetContent::Static("line".to_string())
+            content: SnippetContent::Static("line".to_string()),
+            comments: vec![]
         }
     );
 }
@@ -161,6 +167,7 @@ fn given_nonexistent_file_when_edit_then_creates_file() -> anyhow::Result<()> {
             map
         },
         config_paths: vec![],
+        active_config_path: None,
     };
 
     // Set a mock editor that just touches the file
@@ -169,6 +176,7 @@ fn given_nonexistent_file_when_edit_then_creates_file() -> anyhow::Result<()> {
     let cli = Cli {
         debug: 0,
         generator: None,
+        generate_config: false,
         info: false,
         command: Some(Commands::Edit {
             ctype: Some("test".to_string()),
@@ -181,4 +189,36 @@ fn given_nonexistent_file_when_edit_then_creates_file() -> anyhow::Result<()> {
     // Assert
     assert!(file_path.exists());
     Ok(())
+}
+
+#[test]
+fn given_snippet_with_comments_when_parsing_then_preserves_comments() {
+    // Arrange
+    let content = r#"
+: File level comment (ignored)
+--- apple
+: This is a comment about apples
+: Another comment
+this is green
+and nothing else
+---"#;
+    let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
+    writeln!(temp_file, "{}", content).expect("Failed to write test content");
+    let path = temp_file.path();
+
+    // Act
+    let snippets = parse_snippets_file(path).expect("Should parse successfully");
+
+    // Assert
+    assert_eq!(snippets.len(), 1);
+    let snippet = &snippets[0];
+    assert_eq!(snippet.name, "apple");
+    assert_eq!(snippet.comments, vec![
+        "This is a comment about apples",
+        "Another comment"
+    ]);
+    assert_eq!(
+        snippet.content,
+        SnippetContent::Static("this is green\nand nothing else".to_string())
+    );
 }

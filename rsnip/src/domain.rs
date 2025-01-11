@@ -33,6 +33,7 @@ impl PartialEq for SnippetContent {
 pub struct Snippet {
     pub name: String,
     pub content: SnippetContent,
+    pub comments: Vec<String>,
 }
 
 // Implement template detection

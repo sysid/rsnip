@@ -17,6 +17,7 @@ this is other
 ---
 
 --- greeting
+: comment line
 Hello {{ env_USER }}!
 ---
 

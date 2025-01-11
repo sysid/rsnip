@@ -20,50 +20,71 @@ pub fn copy_to_clipboard(text: &str) -> Result<()> {
     Ok(())
 }
 
+#[derive(Clone, Debug)]
+struct SnippetBuilder {
+    name: Option<String>,
+    content_lines: Vec<String>,
+    comments: Vec<String>,
+}
+
+impl SnippetBuilder {
+    fn new() -> Self {
+        Self {
+            name: None,
+            content_lines: Vec::new(),
+            comments: Vec::new(),
+        }
+    }
+
+    fn build(self) -> Option<Snippet> {
+        self.name.map(|name| {
+            let snippet_text = self.content_lines.join("\n");
+            Snippet {
+                name,
+                content: SnippetContent::new(snippet_text),
+                comments: self.comments,
+            }
+        })
+    }
+}
+
 #[instrument(level = "trace")]
 fn parse_content(content: &str) -> Vec<Snippet> {
     let mut snippets = Vec::new();
-    let mut current_name: Option<String> = None;
-    let mut current_lines: Vec<String> = Vec::new();
+    let mut builder = SnippetBuilder::new();
 
     for line in content.lines() {
         let trimmed = line.trim();
 
         if trimmed.starts_with("--- ") {
-            if let Some(name) = current_name.take() {
-                let snippet_text = current_lines.join("\n");
-                // Use SnippetContent::new() to detect templates
-                snippets.push(Snippet {
-                    name,
-                    content: SnippetContent::new(snippet_text),
-                });
+            // Finalize previous snippet if exists
+            if let Some(snippet) = builder.build() {
+                snippets.push(snippet);
             }
 
+            // Start new snippet
+            builder = SnippetBuilder::new();
             let name = trimmed.trim_start_matches("--- ").to_string();
-            current_name = Some(name);
-            current_lines.clear();
+            builder.name = Some(name);
         } else if trimmed == "---" {
-            if let Some(name) = current_name.take() {
-                let snippet_text = current_lines.join("\n");
-                // Use SnippetContent::new() to detect templates
-                snippets.push(Snippet {
-                    name,
-                    content: SnippetContent::new(snippet_text),
-                });
+            // Finalize current snippet
+            if let Some(snippet) = builder.build() {
+                snippets.push(snippet);
             }
-            current_lines.clear();
-        } else if current_name.is_some() {
-            current_lines.push(line.to_string());
+            builder = SnippetBuilder::new();
+        } else if builder.name.is_some() {
+            // Handle content or comment
+            if trimmed.starts_with(':') {
+                builder.comments.push(trimmed[1..].trim().to_string());
+            } else {
+                builder.content_lines.push(line.to_string());
+            }
         }
     }
 
-    if let Some(name) = current_name.take() {
-        let snippet_text = current_lines.join("\n");
-        // Use SnippetContent::new() to detect templates
-        snippets.push(Snippet {
-            name,
-            content: SnippetContent::new(snippet_text),
-        });
+    // Handle last snippet if exists
+    if let Some(snippet) = builder.build() {
+        snippets.push(snippet);
     }
 
     snippets

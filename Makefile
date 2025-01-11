@@ -44,7 +44,7 @@ test-trace:  ## test-trace: show traces (would not be shown due to fzf interacti
 
 .PHONY: test-fzf-interactive_1
 test-fzf-interactive_1:  ## test-fzf-interactive_1
-	pushd $(pkg_src) && cargo test --color=always --package rsnip --test fuzzy given_no_matches_when_fuzzy_finder_then_shows_interface
+	pushd $(pkg_src) && cargo test --color=always --package rsnip --test fuzzy given_no_matches_when_fuzzy_finder_then_shows_interface -- --ignored
 
 ################################################################################
 # Building, Deploying \

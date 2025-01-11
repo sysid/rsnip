@@ -103,8 +103,13 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             match copy_snippet_to_clipboard(&snippet_type, input, true)? {
                 Some((snippet, rendered_content)) => {
                     println!(
+                        "{}:\n{}\n",
+                        "Comments:".to_string().yellow(),
+                        snippet.comments.join("\n"),
+                    );
+                    println!(
                         "{}",
-                        format!("'{}' copied to clipboard.\n", snippet.name).green()
+                        format!("'{}' -> clipboard:", snippet.name).green()
                     );
                     println!("{}", rendered_content);
                     Ok(())
