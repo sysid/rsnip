@@ -2,10 +2,10 @@
 use crate::domain::SnippetType;
 use crate::path_utils::expand_path;
 use anyhow::Result;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, trace};
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
@@ -18,11 +18,13 @@ pub struct Settings {
     pub active_config_path: Option<PathBuf>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct SnippetTypeConfig {
     pub source_file: PathBuf,
     #[serde(default)]
     pub description: Option<String>,
+    #[serde(default)]
+    pub alias: Option<String>,
 }
 
 impl Default for Settings {
@@ -53,30 +55,36 @@ fn default_snippet_types() -> HashMap<String, SnippetTypeConfig> {
         SnippetTypeConfig {
             source_file: PathBuf::from("completion_source.txt"),
             description: Some("Default snippet type".to_string()),
+            alias: None,
         },
     );
     types
 }
 
 impl Settings {
+    #[instrument(level = "trace")]
     pub fn new() -> Result<Self> {
         let mut builder = config::Config::builder();
-
-        // Load default config first
-        builder = builder.add_source(config::File::from_str(
-            include_str!("default_config.toml"),
-            config::FileFormat::Toml,
-        ));
-
-        // Try loading from config paths and track which one succeeded
         let mut active_path = None;
+
+        // Try loading from config paths first
         for path in default_config_paths() {
-            debug!("Trying to load config from: {:?}", path);
+            trace!("Trying to load config from: {:?}", path);
             if path.exists() {
                 builder = builder.add_source(config::File::from(path.as_path()));
                 active_path = Some(path.clone());
+                debug!("Loaded config from: {:?}", path);
                 break; // Use first found config file
             }
+        }
+
+        // Only load default config if no custom config was found
+        if active_path.is_none() {
+            debug!("No custom config found, using default config");
+            builder = builder.add_source(config::File::from_str(
+                include_str!("default_config.toml"),
+                config::FileFormat::Toml,
+            ));
         }
 
         // Override with environment variables
@@ -100,6 +108,7 @@ impl Settings {
         debug!("Loaded config: {:?}", settings);
         Ok(settings)
     }
+
     pub fn get_snippet_type(&self, name: &str) -> Option<SnippetTypeConfig> {
         self.snippet_types.get(name).cloned()
     }

@@ -162,6 +162,7 @@ fn given_nonexistent_file_when_edit_then_creates_file() -> anyhow::Result<()> {
                 SnippetTypeConfig {
                     source_file: file_path.clone(),
                     description: None,
+                    alias: None,
                 },
             );
             map

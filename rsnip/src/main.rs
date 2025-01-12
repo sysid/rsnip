@@ -14,20 +14,11 @@ use tracing_subscriber::{fmt, Layer};
 fn main() {
     let cli = Cli::parse();
 
+    setup_logging(cli.debug);
+
     // Handle generate-config before any other operations
     if cli.generate_config {
         println!("{}", include_str!("default_config.toml"));
-        return;
-    }
-
-    if let Some(shell) = cli.generator {
-        if let Err(e) = generate_completion_script(shell, std::io::stdout()) {
-            eprintln!(
-                "{}",
-                format!("Error generating completion script: {}", e).red()
-            );
-            std::process::exit(1);
-        }
         return;
     }
 
@@ -39,6 +30,18 @@ fn main() {
             std::process::exit(1);
         }
     };
+
+    if let Some(shell) = cli.generator {
+        if let Err(e) = generate_completion_script(shell, std::io::stdout(), &config) {
+            eprintln!(
+                "{}",
+                format!("Error generating completion script: {}", e).red()
+            );
+            std::process::exit(1);
+        }
+        return;
+    }
+
 
     if cli.info {
         use clap::CommandFactory; // Trait which returns the current command
@@ -63,8 +66,6 @@ fn main() {
             }
         }
     }
-
-    setup_logging(cli.debug);
 
     if let Err(e) = execute_command(&cli, &config) {
         eprintln!("{}", format!("Error: {}", e).red());

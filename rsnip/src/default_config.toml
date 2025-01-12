@@ -1,9 +1,11 @@
 # default_config.toml
 
 [snippet_types.general]
+alias = ",g"
 source_file = "~/.config/rsnip/general_snippets.txt"
 description = "General text snippets"
 
 [snippet_types.shell]
+alias = ","
 source_file = "~/.config/rsnip/shell_snippets.txt"
 description = "Shell command snippets"

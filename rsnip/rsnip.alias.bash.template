@@ -1,6 +1,23 @@
-# rsnip.bash
+# rsnip.bash completion and aliases
+{%- macro section(name) -%}
+# =================================== {{ name }} ===================================
+{%- endmacro -%}
+
+# Unset any existing aliases and completions
 complete -r rsnip > /dev/null 2>&1  # Remove any existing completion
-complete -r "," > /dev/null 2>&1     # Remove any existing completion for the alias
+{%- for type, config in snippet_types %}
+{%- if config.alias %}
+unalias {{ config.alias }} 2>/dev/null  # Remove existing alias
+complete -r "{{ config.alias }}" > /dev/null 2>&1  # Remove existing completion
+{%- endif %}
+{%- endfor %}
+
+# Set up aliases
+{%- for type, config in snippet_types %}
+{%- if config.alias %}
+alias {{ config.alias }}="rsnip copy --ctype {{ type }} --input"
+{%- endif %}
+{%- endfor %}
 
 # Enhanced completion function
 _rsnip_complete() {
@@ -9,22 +26,32 @@ _rsnip_complete() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    # Detect if we're using the alias or full command
-    if [[ ${COMP_WORDS[0]} == "," ]]; then
-        :
-    else
-        # List of available commands
-        local commands="copy edit list types"
+    # Detect if we're using an alias or full command
+    local is_alias=false
+    local alias_type=""
+    case "${COMP_WORDS[0]}" in
+    {%- for type, config in snippet_types %}
+    {%- if config.alias %}
+        "{{ config.alias }}")
+            is_alias=true
+            alias_type="{{ type }}"
+            ;;
+    {%- endif %}
+    {%- endfor %}
+        *)
+            # List of available commands
+            local commands="copy edit list types"
 
-        # If completing a command
-        if [[ ${COMP_CWORD} -eq 1 ]]; then
-            COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
-            return 0
-        fi
-    fi
+            # If completing a command
+            if [[ ${COMP_CWORD} -eq 1 ]]; then
+                COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
+                return 0
+            fi
+            ;;
+    esac
 
     # Get available snippet types
-    local snippet_types=$(rsnip types --list 2>/dev/null)
+    local snippet_types=$(rsnip types --list)
 
     case "${prev}" in
         "--ctype"|"-c")
@@ -37,13 +64,13 @@ _rsnip_complete() {
             ;;
     esac
 
-    # Handle the alias case - treat everything after "," as input
-    if [[ ${COMP_WORDS[0]} == "," ]]; then
+    # Handle alias cases
+    if [[ ${is_alias} == true ]]; then
         # Save current terminal state
         tput smcup
 
         local result
-        result="$(rsnip complete --interactive --ctype shell --input "${cur}")"
+        result="$(rsnip complete --interactive --ctype "${alias_type}" --input "${cur}")"
 
         # Restore terminal state
         tput rmcup
@@ -89,6 +116,15 @@ if [[ :"${SHELLOPTS}": =~ :(vi|emacs): && ${TERM} != 'dumb' ]]; then
     bind '"\e[0n": redraw-current-line' &>/dev/null
 fi
 
-# Setup completion for both the command and the alias
+# Setup completion for command and all aliases
 complete -F _rsnip_complete rsnip
-complete -F _rsnip_complete ","
+{%- for type, config in snippet_types %}
+{%- if config.alias %}
+complete -F _rsnip_complete "{{ config.alias }}"
+{%- endif %}
+{%- endfor %}
+
+{{ section("Usage") }}
+# To initialize rsnip, add this to your shell configuration file (usually ~/.bashrc):
+#
+# source <(rsnip --generate bash)

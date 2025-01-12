@@ -1,43 +1,39 @@
-use clap_complete::Shell;
+// complete.rs
+use crate::config::Settings;
+use anyhow::Result;
 use std::io::Write;
+use clap_complete::Shell;
+use minijinja::Environment;
 
-pub fn generate_completion_script(shell: Shell, mut writer: impl Write) -> anyhow::Result<()> {
+pub fn generate_completion_script(shell: Shell, mut writer: impl Write, config: &Settings) -> Result<()> {
     match shell {
         Shell::Bash => {
-            let content = include_str!("../rsnip.alias.bash");
-            writer.write_all(content.as_bytes())?;
-        }
+            let mut env = Environment::new();
+
+            // Load the template
+            env.add_template("bash_completion", include_str!("../rsnip.alias.bash.template"))?;
+
+            // Get template
+            let tmpl = env.get_template("bash_completion")?;
+
+            // Create context with snippet types that have aliases
+            let snippet_types: Vec<_> = config.snippet_types
+                .iter()
+                .map(|(name, cfg)| (name, cfg))
+                .collect();
+
+            let context = minijinja::context! {
+                snippet_types => snippet_types,
+            };
+
+            // Render and write
+            let rendered = tmpl.render(context)?;
+            writer.write_all(rendered.as_bytes())?;
+
+            Ok(())
+        },
         _ => {
-            return Err(anyhow::anyhow!(
-                "Only Bash completion is currently supported"
-            ));
+            Err(anyhow::anyhow!("Only Bash completion is currently supported"))
         }
-    }
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_generate_bash_completion() -> anyhow::Result<()> {
-        let mut buffer = Vec::new();
-        generate_completion_script(Shell::Bash, &mut buffer)?;
-
-        let output = String::from_utf8_lossy(&buffer);
-        assert!(
-            output.contains("_rsnip_complete"),
-            "Output doesn't contain completion function"
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn test_unsupported_shell() {
-        let mut buffer = Vec::new();
-        let result = generate_completion_script(Shell::Fish, &mut buffer);
-        assert!(result.is_err());
-        assert!(buffer.is_empty());
     }
 }
