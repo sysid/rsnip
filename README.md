@@ -1,10 +1,11 @@
-# RSnip: Smart Snippet Management with Template Support 🚀
+# rsnip: Smart Snippet Management with Template Support 🚀
 
-RSnip is a powerful command-line snippet manager written in Rust that helps you organize, find, and reuse text snippets with advanced templating capabilities. It features fuzzy search, intelligent shell integration, and dynamic template rendering.
+rsnip is a powerful command-line snippet manager that helps organize, find, and reuse text snippets with advanced templating capabilities. It features fuzzy search, intelligent shell integration, and dynamic template rendering.
 
-[![CI Status](https://img.shields.io/github/workflow/status/yourusername/rsnip/CI)](https://github.com/yourusername/rsnip/actions)
 [![Crates.io](https://img.shields.io/crates/v/rsnip)](https://crates.io/crates/rsnip)
 [![License](https://img.shields.io/crates/l/rsnip)](LICENSE)
+
+[Fast, Reliable, Yours: Why Snippets Outshine LLMs for boring Tasks](https://sysid.github.io/rsnip/)
 
 ## 🌟 Key Features
 
@@ -269,3 +270,7 @@ Built with excellent Rust crates:
 - skim: Fuzzy finder
 - anyhow/thiserror: Error handling
 - crossterm: Terminal UI
+
+
+### Similar Work
+[GitHub - knqyf263/pet: Simple command-line snippet manager](https://github.com/knqyf263/pet)
