@@ -28,7 +28,11 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Commands {
     /// List available snippet types
-    Types,
+    Types {
+        /// Output space-separated list format
+        #[arg(long)]
+        list: bool,
+    },
     /// List all snippets
     List {
         /// Type of snippets to list

@@ -5,7 +5,7 @@ use crate::cli::args::{Cli, Commands};
 use anyhow::{anyhow, Result};
 use crossterm::style::Stylize;
 use std::fs;
-
+use itertools::Itertools;
 use crate::config::{get_snippet_type, Settings};
 use crate::infrastructure;
 use crate::infrastructure::parse_snippets_file;
@@ -61,13 +61,18 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             infrastructure::edit_snips_file(&snippet_type, Some(1usize))?;
             Ok(())
         }
-        Some(Commands::Types) => {
-            println!("\nAvailable snippet types:");
-            for (name, cfg) in &config.snippet_types {
-                if let Some(desc) = &cfg.description {
-                    println!("  {}: {}", name, desc);
-                } else {
-                    println!("  {}", name);
+        Some(Commands::Types { list }) => {
+            if *list {
+                // Just print the types space-separated
+                println!("{}", config.snippet_types.keys().cloned().sorted().collect::<Vec<_>>().join(" "));
+            } else {
+                println!("\nAvailable snippet types:");
+                for (name, cfg) in &config.snippet_types {
+                    if let Some(desc) = &cfg.description {
+                        println!("  {}: {}", name, desc);
+                    } else {
+                        println!("  {}", name);
+                    }
                 }
             }
             Ok(())
