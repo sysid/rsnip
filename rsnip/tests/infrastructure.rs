@@ -2,7 +2,7 @@ use rsnip::cli::args::{Cli, Commands};
 use rsnip::cli::commands::execute_command;
 use rsnip::config::{Settings, SnippetTypeConfig};
 use rsnip::domain::{Snippet, SnippetContent};
-use rsnip::infrastructure::parse_snippets_file;
+use rsnip::infrastructure::{find_snippet_line_number, parse_snippets_file};
 use std::collections::HashMap;
 use std::env;
 use std::io::Write;
@@ -181,6 +181,7 @@ fn given_nonexistent_file_when_edit_then_creates_file() -> anyhow::Result<()> {
         info: false,
         command: Some(Commands::Edit {
             ctype: Some("test".to_string()),
+            input: None,
         }),
     };
 
@@ -222,4 +223,23 @@ and nothing else
         snippet.content,
         SnippetContent::Static("this is green\nand nothing else".to_string())
     );
+}
+
+#[test]
+fn given_existing_snippet_when_finding_line_number_then_returns_correct_line() {
+    let content = r#"
+: Some comment
+--- first
+content
+---
+--- target
+content
+---"#;
+    assert_eq!(find_snippet_line_number(content, "target"), Some(6));
+}
+
+#[test]
+fn given_nonexistent_snippet_when_finding_line_number_then_returns_none() {
+    let content = "--- first\ncontent\n---";
+    assert_eq!(find_snippet_line_number(content, "nonexistent"), None);
 }

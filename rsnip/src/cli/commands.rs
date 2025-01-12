@@ -8,7 +8,7 @@ use std::fs;
 use itertools::Itertools;
 use crate::config::{get_snippet_type, Settings};
 use crate::infrastructure;
-use crate::infrastructure::parse_snippets_file;
+use crate::infrastructure::{find_snippet_line_number, parse_snippets_file};
 use crate::path_utils::expand_path;
 
 pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
@@ -36,31 +36,42 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             }
             Ok(())
         }
-        Some(Commands::Edit { ctype }) => {
-            let ctype = ctype.as_deref().unwrap_or("default");
-            let snippet_type = get_snippet_type(config, ctype)?;
-            let expanded_path = expand_path(&snippet_type.source_file)?;
+    Some(Commands::Edit { ctype, input }) => {
+        let ctype = ctype.as_deref().unwrap_or("default");
+        let snippet_type = get_snippet_type(config, ctype)?;
+        let expanded_path = expand_path(&snippet_type.source_file)?;
 
-            // Create parent directories if they don't exist
-            if let Some(parent) = expanded_path.parent() {
-                fs::create_dir_all(parent)?;
-            }
-
-            // Create file if it doesn't exist
-            if !expanded_path.exists() {
-                println!(
-                    "{}",
-                    format!("Creating new snippet file: {}", expanded_path.display()).green()
-                );
-                fs::write(
-                    &expanded_path,
-                    "# Snippet file for type: ".to_string() + ctype,
-                )?;
-            }
-
-            infrastructure::edit_snips_file(&snippet_type, Some(1usize))?;
-            Ok(())
+        // Create parent directories if they don't exist
+        if let Some(parent) = expanded_path.parent() {
+            fs::create_dir_all(parent)?;
         }
+
+        // Create file if it doesn't exist
+        if !expanded_path.exists() {
+            println!(
+                "{}",
+                format!("Creating new snippet file: {}", expanded_path.display()).green()
+            );
+            fs::write(
+                &expanded_path,
+                "# Snippet file for type: ".to_string() + ctype,
+            )?;
+        }
+
+        // If input is provided, find the line number for that snippet
+        let line_number = if let Some(input) = input {
+            // let snippets = parse_snippets_file(&snippet_type.source_file)?;
+            let content = fs::read_to_string(&expanded_path)?;
+
+            // Find the snippet and its line number
+            find_snippet_line_number(&content, &input)
+        } else {
+            Some(1usize)
+        };
+
+        infrastructure::edit_snips_file(&snippet_type, line_number)?;
+        Ok(())
+    },
         Some(Commands::Types { list }) => {
             if *list {
                 // Just print the types space-separated
@@ -93,12 +104,6 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             } else if let Some(item) = find_completion_exact(&snippet_type, input)? {
                 println!("{}", item.name);
             }
-            Ok(())
-        }
-        Some(Commands::Xxx { ctype, input }) => {
-            let ctype = ctype.as_deref().unwrap_or("default");
-            let snippet_type = get_snippet_type(config, ctype)?;
-            println!("Command xxx: {} {}", snippet_type.name, input);
             Ok(())
         }
         Some(Commands::Copy { ctype, input }) => {

@@ -8,7 +8,9 @@ complete -r rsnip > /dev/null 2>&1  # Remove any existing completion
 {%- for type, config in snippet_types %}
 {%- if config.alias %}
 unalias {{ config.alias }} 2>/dev/null  # Remove existing alias
+unalias e{{ config.alias }} 2>/dev/null  # Remove existing edit alias
 complete -r "{{ config.alias }}" > /dev/null 2>&1  # Remove existing completion
+complete -r "e{{ config.alias }}" > /dev/null 2>&1  # Remove existing edit completion
 {%- endif %}
 {%- endfor %}
 
@@ -16,6 +18,7 @@ complete -r "{{ config.alias }}" > /dev/null 2>&1  # Remove existing completion
 {%- for type, config in snippet_types %}
 {%- if config.alias %}
 alias {{ config.alias }}="rsnip copy --ctype {{ type }} --input"
+alias e{{ config.alias }}="rsnip edit --ctype {{ type }} --input"
 {%- endif %}
 {%- endfor %}
 
@@ -29,11 +32,17 @@ _rsnip_complete() {
     # Detect if we're using an alias or full command
     local is_alias=false
     local alias_type=""
+    local is_edit=false
     case "${COMP_WORDS[0]}" in
     {%- for type, config in snippet_types %}
     {%- if config.alias %}
         "{{ config.alias }}")
             is_alias=true
+            alias_type="{{ type }}"
+            ;;
+        "e{{ config.alias }}")
+            is_alias=true
+            is_edit=true
             alias_type="{{ type }}"
             ;;
     {%- endif %}
@@ -58,7 +67,7 @@ _rsnip_complete() {
             COMPREPLY=( $(compgen -W "${snippet_types}" -- ${cur}) )
             return 0
             ;;
-        "complete"|"copy")
+        "complete"|"copy"|"edit")
             COMPREPLY=( $(compgen -W "--ctype --input --interactive" -- ${cur}) )
             return 0
             ;;
@@ -121,6 +130,7 @@ complete -F _rsnip_complete rsnip
 {%- for type, config in snippet_types %}
 {%- if config.alias %}
 complete -F _rsnip_complete "{{ config.alias }}"
+complete -F _rsnip_complete "e{{ config.alias }}"
 {%- endif %}
 {%- endfor %}
 
@@ -128,3 +138,7 @@ complete -F _rsnip_complete "{{ config.alias }}"
 # To initialize rsnip, add this to your shell configuration file (usually ~/.bashrc):
 #
 # source <(rsnip --generate bash)
+#
+# Examples:
+# , <tab>          # Fuzzy find and copy a snippet
+# e, <tab>         # Fuzzy find and edit a snippet

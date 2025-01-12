@@ -145,6 +145,16 @@ pub fn edit_snips_file(snippet_type: &SnippetType, line_number: Option<usize>) -
     Ok(())
 }
 
+/// Find line number where a snippet starts
+#[instrument(level = "debug")]
+pub fn find_snippet_line_number(content: &str, snippet_name: &str) -> Option<usize> {
+    content
+        .lines()
+        .enumerate()
+        .find(|(_, line)| line.trim() == format!("--- {}", snippet_name))
+        .map(|(idx, _)| idx + 1)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

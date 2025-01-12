@@ -39,11 +39,14 @@ pub enum Commands {
         #[arg(long)]
         ctype: Option<String>,
     },
-    /// Edit snippet file in system editor
+    /// Edit snippet in system editor
     Edit {
         /// Type of completion
         #[arg(long)]
         ctype: Option<String>,
+        /// The snippet to edit
+        #[arg(long)]
+        input: Option<String>,
     },
     /// Find completions with optional interactive selection
     Complete {
@@ -63,14 +66,6 @@ pub enum Commands {
         #[arg(long)]
         ctype: Option<String>,
         /// The text to copy
-        #[arg(long)]
-        input: String,
-    },
-    Xxx {
-        /// Type of completion
-        #[arg(long)]
-        ctype: Option<String>,
-        /// The text to look up from completion
         #[arg(long)]
         input: String,
     },
