@@ -38,6 +38,9 @@ pub enum Commands {
         /// Type of snippets to list
         #[arg(long)]
         ctype: Option<String>,
+        /// Filter snippets by prefix
+        #[arg(long)]
+        prefix: Option<String>,
     },
     /// Edit snippet in system editor
     Edit {

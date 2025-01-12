@@ -6,6 +6,7 @@ use anyhow::{anyhow, Result};
 use crossterm::style::Stylize;
 use std::fs;
 use itertools::Itertools;
+use tracing::debug;
 use crate::config::{get_snippet_type, Settings};
 use crate::infrastructure;
 use crate::infrastructure::{find_snippet_line_number, parse_snippets_file};
@@ -13,26 +14,50 @@ use crate::path_utils::expand_path;
 
 pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
     match &cli.command {
-        Some(Commands::List { ctype }) => {
+        Some(Commands::List { ctype, prefix }) => {
             let ctype = ctype.as_deref().unwrap_or("default");
             let snippet_type = get_snippet_type(config, ctype)?;
-            let snippets = parse_snippets_file(&snippet_type.source_file)?;
+            let mut snippets = parse_snippets_file(&snippet_type.source_file)?;
 
-            println!("\nSnippets for type '{}':", ctype);
+            // Filter by prefix if provided
+            if let Some(prefix) = prefix {
+                snippets.retain(|s| s.name.starts_with(prefix));
+            }
+
+            // Sort snippets by name
+            snippets.sort_by(|a, b| a.name.cmp(&b.name));
+
+            // Find the longest name for padding
+            let max_name_len = snippets
+                .iter()
+                .map(|s| s.name.len())
+                .max()
+                .unwrap_or(0);
+            debug!("Max name length: {}", max_name_len);
+
+            eprintln!("\nSnippets for type '{}':", ctype);  // Print to stderr for piping
             for snippet in snippets {
-                let preview = snippet
+                let content = snippet
                     .content
                     .get_content()
                     .lines()
-                    .next()
-                    .unwrap_or("")
-                    .trim();
+                    .collect::<Vec<_>>()
+                    .join(" ");
 
-                if preview.is_empty() {
-                    println!("  {}", snippet.name);
+                // Truncate long content for display
+                let display_content = if content.len() > 100 {
+                    format!("{}...", &content[..97])
                 } else {
-                    println!("  {}: {}", snippet.name, preview);
-                }
+                    content
+                };
+
+                // Using format! first to ensure the name padding works correctly
+                let padded_name = format!("{:width$}", snippet.name, width = max_name_len);
+                println!(
+                    "  {}    {}",
+                    padded_name.green(),
+                    display_content
+                );
             }
             Ok(())
         }

@@ -110,20 +110,22 @@ RSnip provides powerful shell integration:
 [snippet_types.shell]
 alias = ","    # Use as: , mysnippet
 ```
+For every alias an associated "edit" alias will be generated (prefix e): `e,`.
 
-2. **Smart Tab Completion**: 
+2. **Smart Tab Completion**:
 - Works with both full commands and aliases
 - Supports fuzzy matching
 - Shows preview window with snippet content
-- Remembers last used selections
 
 Example usage:
 ```bash
 # Using alias
-, back<tab>  # Fuzzy finds 'backup' snippet
+, back<tab>   # Fuzzy finds 'backup' snippet and copies to clipboard
+e, back<tab>  # Fuzzy finds 'backup' snippet and edits it
 
 # Using full command
 rsnip copy --ctype shell --input back<tab>
+rsnip edit --ctype shell --input back<tab>
 ```
 
 3. **Interactive Selection**: 
@@ -167,25 +169,25 @@ git commit -m "Update: {{ current_date|strftime('%Y-%m-%d') }} - {{ 'git status 
 ### Command Reference
 
 ```bash
-USAGE:
-    rsnip [FLAGS] [OPTIONS] [SUBCOMMAND]
+A universal command-line snippet manager
 
-FLAGS:
-    -d, --debug             Enable debug logging
-        --generate-config   Print default configuration
-        --info             Show version and config info
-    -h, --help             Show help
-    -V, --version          Show version
+Usage: rsnip [OPTIONS] [COMMAND]
 
-OPTIONS:
-        --generate <SHELL>  Generate shell completion
+Commands:
+  types     List available snippet types
+  list      List all snippets
+  edit      Edit snippet in system editor
+  complete  Find completions with optional interactive selection
+  copy      Copy text to clipboard
 
-SUBCOMMANDS:
-    types      List snippet types
-    list       Show all snippets
-    edit       Edit snippets
-    complete   Find/search snippets
-    copy       Copy to clipboard
+Options:
+  -d, --debug...              Enable debug logging. Multiple flags (-d, -dd, -ddd) increase verbosity
+      --generate <GENERATOR>  Generate shell completion scripts [possible values: bash, elvish, fish, powershell, zsh]
+      --generate-config       Print default configuration to stdout
+      --info                  Display version and configuration information
+  -h, --help                  Print help
+  -V, --version               Print version
+
 ```
 
 ### Debug Support
