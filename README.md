@@ -1,22 +1,28 @@
-# RSnip: Fast & Flexible Text Snippets 🚀
+# RSnip: Smart Snippet Management with Template Support 🚀
 
-RSnip is a command-line text snippet manager built in Rust that helps you save and reuse frequently used text snippets with powerful templating capabilities.
+RSnip is a powerful command-line snippet manager written in Rust that helps you organize, find, and reuse text snippets with advanced templating capabilities. It features fuzzy search, intelligent shell integration, and dynamic template rendering.
 
 [![CI Status](https://img.shields.io/github/workflow/status/yourusername/rsnip/CI)](https://github.com/yourusername/rsnip/actions)
 [![Crates.io](https://img.shields.io/crates/v/rsnip)](https://crates.io/crates/rsnip)
 [![License](https://img.shields.io/crates/l/rsnip)](LICENSE)
 
-## 🌟 Features
+## 🌟 Key Features
 
-- **Multiple Snippet Types**: Organize snippets into different categories (shell commands, code snippets, etc.)
-- **Fuzzy Search**: Fast fuzzy finding with interactive selection using fzf-style interface
-- **Shell Integration**: Tab completion for your snippets in bash
-- **Dynamic Templates**: Support for dynamic content using Jinja2-style templates
-- **Shell-friendly**: Direct shell integration with aliases and completions
-- **Configurable**: TOML-based configuration with multiple config file locations
-- **Fast**: Written in Rust for optimal performance
-- **Debug Support**: Configurable debug levels for troubleshooting
-- **Smart Completion**: Both exact and fuzzy matching for snippet names
+- **Smart Organization**: Categorize snippets into types (shell commands, code, notes, etc.)
+- **Fuzzy Search**: Lightning-fast fuzzy finding with interactive fzf-style interface
+- **Deep Shell Integration**: 
+  - Tab completion for snippets in bash
+  - Customizable aliases per snippet type
+  - Interactive fuzzy completion
+- **Dynamic Templates**: 
+  - Jinja2-style template syntax
+  - Date manipulation filters
+  - Environment variable access
+  - Safe shell command execution
+- **Flexible Configuration**: 
+  - TOML-based configuration
+  - Per-snippet-type settings
+- **Developer-Friendly**: Comprehensive debugging support
 
 ## 🚀 Quick Start
 
@@ -26,169 +32,240 @@ RSnip is a command-line text snippet manager built in Rust that helps you save a
 cargo install rsnip
 ```
 
-### Basic Usage
+### Basic Setup
 
-1. Create a snippet:
+1. Initialize configuration:
 ```bash
-rsnip edit --ctype shell  # Opens your default editor
+# Generate default config
+rsnip --generate-config > ~/.config/rsnip/config.toml
 ```
 
-2. Add some snippets in the format:
+2. Add shell integration to your `.bashrc`:
+```bash
+# Enable tab completion and aliases
+source <(rsnip --generate bash)
 ```
---- greeting
-: This is a comment about the greeting snippet
+
+3. Create your first snippet file:
+```bash
+rsnip edit --ctype shell
+```
+
+### Configuration
+
+RSnip uses TOML configuration with rich customization options:
+
+```toml
+[snippet_types.shell]
+source_file = "~/.config/rsnip/shell_snippets.txt"
+description = "Shell commands and scripts"
+alias = ","  # Quick access alias
+
+[snippet_types.git]
+source_file = "~/.config/rsnip/git_snippets.txt"
+description = "Git workflows"
+alias = ",g"  # Git-specific alias
+
+[snippet_types.docker]
+source_file = "~/.config/rsnip/docker_snippets.txt"
+description = "Docker commands"
+alias = ",d"  # Docker-specific alias
+```
+
+Configuration is searched in:
+1. `~/.config/rsnip/config.toml`
+2. `~/.config/rsnip/config.toml`
+3. `/etc/rsnip/config.toml`
+
+### Snippet Format
+
+Snippets use a clear, readable format:
+
+```
+: Optional file-level comments
+
+--- snippet_name
+: Comment describing the snippet
+: Additional comment lines
+Content goes here
+Multiple lines supported
+---
+
+--- template_example
+: Example using templates
 Hello {{ env_USER }}!
----
-
---- backup
-: Creates a dated backup archive
-tar -czf backup-{{ current_date|strftime('%Y%m%d') }}.tar.gz ./
+Created on: {{ current_date|strftime('%Y-%m-%d') }}
 ---
 ```
 
-3. Use your snippets:
+## 🛠️ Advanced Features
+
+### Shell Integration & Aliases
+
+RSnip provides powerful shell integration:
+
+1. **Type-Specific Aliases**: Configure quick access aliases per snippet type:
+```toml
+[snippet_types.shell]
+alias = ","    # Use as: , mysnippet
+```
+
+2. **Smart Tab Completion**: 
+- Works with both full commands and aliases
+- Supports fuzzy matching
+- Shows preview window with snippet content
+- Remembers last used selections
+
+Example usage:
 ```bash
-# List all snippet types
-rsnip types
+# Using alias
+, back<tab>  # Fuzzy finds 'backup' snippet
 
-# List available snippets for a type
-rsnip list --ctype shell
-
-# Copy a snippet to clipboard
-rsnip copy --ctype shell --input greeting
-
-# Interactive fuzzy search
-rsnip complete --ctype shell --interactive
+# Using full command
+rsnip copy --ctype shell --input back<tab>
 ```
 
-### Command Line Options
+3. **Interactive Selection**: 
+- FZF-style interface
+- Live preview
+- Fuzzy search
+- Vim-style navigation
+
+### Template System
+
+RSnip implements a powerful template engine with:
+
+1. **Built-in Filters**:
+```
+# Date formatting
+{{ current_date|strftime('%Y-%m-%d') }}
+
+# Date arithmetic
+{{ current_date|add_days(7) }}
+{{ current_date|subtract_days(7) }}
+
+# Safe shell execution
+{{ 'git rev-parse --short HEAD'|shell }}
+```
+
+2. **Environment Variables**:
+```
+{{ env_HOME }}     # Access $HOME
+{{ env_USER }}     # Access $USER
+{{ env_PATH }}     # Access $PATH
+```
+
+3. **Dynamic Content**:
+```
+--- git-commit
+: Create a dated commit
+git commit -m "Update: {{ current_date|strftime('%Y-%m-%d') }} - {{ 'git status -s|wc -l'|shell }} files"
+---
+```
+
+### Command Reference
 
 ```bash
 USAGE:
     rsnip [FLAGS] [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
-    -d, --debug             Enable debug logging (multiple -d increases verbosity)
-        --generate-config   Print default configuration to stdout
-        --info             Display version and configuration information
-    -h, --help             Prints help information
-    -V, --version          Prints version information
+    -d, --debug             Enable debug logging
+        --generate-config   Print default configuration
+        --info             Show version and config info
+    -h, --help             Show help
+    -V, --version          Show version
 
 OPTIONS:
-        --generate <SHELL>  Generate shell completion scripts (bash)
+        --generate <SHELL>  Generate shell completion
 
 SUBCOMMANDS:
-    types      List available snippet types
-    list       List all snippets
-    edit       Edit snippet file in system editor
-    complete   Find completions with optional interactive selection
-    copy       Copy text to clipboard
-    help       Prints this message or help for given subcommand
+    types      List snippet types
+    list       Show all snippets
+    edit       Edit snippets
+    complete   Find/search snippets
+    copy       Copy to clipboard
 ```
 
-### Shell Integration
+### Debug Support
 
-Add to your `.bashrc`:
+Multiple verbosity levels for troubleshooting:
 ```bash
-# Optional: Add convenient alias
-alias ,="rsnip copy --ctype shell --input"
-
-# Enable tab completion
-source <(rsnip --generate bash)
+rsnip -d    # Info level
+rsnip -dd   # Debug level
+rsnip -ddd  # Trace level
 ```
 
-Now you can use:
-```bash
-, back<tab>  # Will fuzzy-find and complete 'backup'
-```
-
-## ⚙️ Configuration
-
-RSnip looks for configuration in the following locations (in order):
-1. `~/.config/rsnip/config.toml`
-2. `~/.config/rsnip/config.toml`
-3. `/etc/rsnip/config.toml`
-
-Example configuration:
-```toml
-[snippet_types.shell]
-source_file = "~/.config/rsnip/shell_snippets.txt"
-description = "Shell command snippets"
-
-[snippet_types.git]
-source_file = "~/.config/rsnip/git_snippets.txt"
-description = "Git commands and workflows"
-```
-
-## 🛠️ Template Features
-
-RSnip supports Jinja2-style templates with several built-in filters:
-
-- `strftime`: Format dates - `{{ current_date|strftime('%Y-%m-%d') }}`
-- `add_days`: Add days to date - `{{ current_date|add_days(7) }}`
-- `subtract_days`: Subtract days - `{{ current_date|subtract_days(7) }}`
-- `shell`: Execute shell commands (safely) - `{{ 'date +%Y' | shell }}`
-
-Built-in variables:
-- `current_date`: Current date in ISO format
-- Environment variables are available as `env_VARNAME`:
-```
---- path
-Current path is: {{ env_PATH }}
----
-```
-
-### Snippet File Format
-
-Snippets are stored in text files with a simple format:
-```
-: File-level comments (optional)
-
---- snippet_name
-: Comment about this snippet
-: Another comment
-Content goes here
-Can be multiple lines
----
-```
-
-## 🔍 Debug and Troubleshooting
-
-RSnip supports multiple debug levels:
-```bash
-rsnip -d        # Info level
-rsnip -dd       # Debug level
-rsnip -ddd      # Trace level
-```
-
-View configuration and version info:
+View system information:
 ```bash
 rsnip --info
 ```
 
+## 🔍 Usage Examples
+
+### Managing Shell Commands
+
+1. Create shell snippets:
+```
+--- aws-profile
+: Switch AWS profile
+export AWS_PROFILE={{ env_AWS_PROFILE|default('default') }}
+---
+
+--- docker-clean
+: Remove unused Docker resources
+docker system prune -af
+---
+```
+
+2. Use with aliases:
+```bash
+, aws<tab>     # Fuzzy finds aws-profile
+,d clean<tab>  # Finds docker-clean using docker alias
+```
+
+### Git Workflows
+
+1. Create git snippets:
+```
+--- commit-wip
+: Create WIP commit with date
+git commit -m "WIP: {{ current_date|strftime('%Y-%m-%d %H:%M') }}"
+---
+```
+
+2. Use with dedicated alias:
+```bash
+,g wip<tab>  # Finds and applies commit-wip
+```
+
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+Contributions welcome! Please check our [Contributing Guide](CONTRIBUTING.md).
 
-### Development
+### Development Setup
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/yourusername/rsnip
 cd rsnip
 
 # Run tests
 cargo test
 
-# Build in release mode
+# Build release
 cargo build --release
 ```
 
-## License
+## 📄 License
 
-This project is licensed under the BSD 3 License - see the LICENSE file for details.
+BSD 3-Clause License - see [LICENSE](LICENSE) for details.
 
 ## 🙏 Acknowledgments
 
-- Inspired by various snippet managers and completion tools
-- Built with Rust and several awesome crates including clap, minijinja, skim, and more
+Built with excellent Rust crates:
+- clap: Command line parsing
+- minijinja: Template engine
+- skim: Fuzzy finder
+- anyhow/thiserror: Error handling
+- crossterm: Terminal UI
