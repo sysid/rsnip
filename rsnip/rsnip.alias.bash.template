@@ -102,27 +102,30 @@ _rsnip_complete() {
     done
 
     if [[ -n "${ctype}" && "${prev}" == "--input" ]]; then
-        # Save current terminal state
-        tput smcup
+        # Save cursor position and clear below
+        printf '\e7\e[J'
 
         local result
         result="$(rsnip complete --interactive --ctype "${ctype}" --input "${cur}")"
 
-        # Restore terminal state
-        tput rmcup
+        # Restore cursor position and clear any remnants
+        printf '\e8\e[J'
 
         if [[ -n "$result" ]]; then
             COMPREPLY=("$result")
-            # Redraw line after fzf closes
-            printf '\e[5n'
+        else
+            # On ESC/cancel preserve current input
+            COMPREPLY=("$cur")
         fi
+        # Make sure line is redrawn correctly
+        bind 'redraw-current-line' >/dev/null 2>&1
     fi
 }
 
-# Enable line editing features needed for interactive completion
-if [[ :"${SHELLOPTS}": =~ :(vi|emacs): && ${TERM} != 'dumb' ]]; then
-    # Bind escape sequence for redrawing line after fuzzy selection
-    bind '"\e[0n": redraw-current-line' &>/dev/null
+# Ensure terminal properly handles escape sequences
+if [[ $TERM != "dumb" ]]; then
+    bind 'set enable-bracketed-paste off' 2>/dev/null
+    bind 'set mark-symlinked-directories on' 2>/dev/null
 fi
 
 # Setup completion for command and all aliases

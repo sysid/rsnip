@@ -135,21 +135,25 @@ pub fn run_fuzzy_finder(
     }
 
     let options = SkimOptionsBuilder::default()
-        .height("10%".to_string())
+        .height("20%".to_string())
+        .layout("reverse".to_string()) // This puts the prompt at the bottom
         .multi(false)
+        .margin("1,2".to_string()) // Add some margin
         .ansi(true)
         .bind(vec![
             "ctrl-e:accept".to_string(),
             "enter:accept".to_string(),
+            "ctrl-c:abort".to_string(),
         ])
+        // .inline_info(true)
         .preview_window("right:75%:wrap:border".to_string())
-        // .preview(Some("--preview-window=right:70%:wrap:border --preview={}".to_string()))
         .preview(Some("".to_string()))
         // These three options are key for auto-selection:
         .filter(Some(initial_query.to_string())) // Immediately apply filter
         .query(Some(initial_query.to_string())) // Pre-populate search box
         .select_1(true) // Auto-select if single match
         .exit_0(true) // Exit if no matches
+        .color(Some("dark,fg:252,bg:235,hl:178,fg+:252,bg+:237,hl+:178".to_string()))
         .build()?;
 
     let skim_items = create_skim_items(items, snippet_type);
@@ -165,8 +169,8 @@ pub fn run_fuzzy_finder(
     let mut stderr = std::io::stderr(); // this is the key for proper terminal cleanup
     let selected = Skim::run_with(&options, Some(rx_reader))
         .map(|out| {
-            // Always clean up terminal state after Skim closes
-            execute!(stderr, Clear(ClearType::FromCursorUp)).ok();
+            // Always clean up terminal state after Skim closes, but seems not to be needed
+            execute!(stderr, Clear(ClearType::FromCursorDown)).ok();
 
             match out.final_key {
                 Key::Ctrl('e') => {
