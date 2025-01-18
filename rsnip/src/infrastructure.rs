@@ -93,7 +93,7 @@ fn parse_content(content: &str) -> Vec<Snippet> {
 #[instrument(level = "debug")]
 pub fn parse_snippets_file(path: &Path) -> Result<Vec<Snippet>> {
     if !path.exists() {
-        eprintln!("{}", format!("Warning: Snippet file '{}' not found, using default completions.\nYou want to change this!\n", path.display()).red());
+        eprintln!("{}", format!("Warning: Snippet file '{}' not found, using default.\nYou need to create yours!\n", path.display()).red());
         return Ok(parse_content(DEFAULT_COMPLETIONS));
     }
 

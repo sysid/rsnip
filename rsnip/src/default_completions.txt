@@ -1,17 +1,21 @@
 : This is an example completion source file
 
---- apple
-this is green
-and nothing else
+--- hello
+: this is a comment
+Hello {{ env_USER }}
 ---
 
---- aple
-this is green2
+--- hello-world
+Hallo {{ "echo '-M- World'" | shell }}
 ---
 
---- banana
-this is yellow
+--- next-week
+Due date: {{ current_date|add_days(7)|strftime('%Y-%m-%d') }}
 ---
---- else
-this is other
+
+--- system-info
+OS: {{ 'uname -s' | shell }}
+Kernel: {{ 'uname -r' | shell }}
+Hostname: {{ 'hostname' | shell }}
 ---
+
