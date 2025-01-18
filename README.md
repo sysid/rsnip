@@ -1,4 +1,6 @@
-# rsnip: Smart Snippet Management with Template Support 🚀
+## rsnip
+
+# Smart Snippet Management with Template Support
 
 A powerful command-line snippet manager that helps organize, find, and reuse text snippets with advanced templating capabilities. It features fuzzy search, intelligent shell integration, and dynamic template rendering.
 
@@ -11,7 +13,7 @@ A powerful command-line snippet manager that helps organize, find, and reuse tex
 
 - **Smart Organization**: Categorize snippets into types (shell commands, code, notes, etc.)
 - **Fuzzy Search**: Lightning-fast fuzzy finding with interactive fzf-style interface
-- **Deep Shell Integration**: 
+- **Deep Shell Integration** (Inspired by [zoxide](https://github.com/ajeetdsouza/zoxide)):
   - Tab completion for snippets in bash
   - Customizable aliases per snippet type
   - Interactive fuzzy completion
@@ -74,9 +76,7 @@ alias = ",d"  # Docker-specific alias
 ```
 
 Configuration is searched in:
-1. `~/.config/rsnip/config.toml`
-2. `~/.config/rsnip/config.toml`
-3. `/etc/rsnip/config.toml`
+`~/.config/rsnip/config.toml`
 
 ### Snippet Format
 
@@ -86,7 +86,7 @@ Snippets use a clear, readable format:
 : Optional file-level comments
 
 --- snippet_name
-: Comment describing the snippet
+: Comment describing the snippet (optional)
 : Additional comment lines
 Content goes here
 Multiple lines supported
@@ -110,10 +110,10 @@ RSnip provides powerful shell integration:
 [snippet_types.shell]
 alias = ","    # Use as: , mysnippet
 ```
-For every alias an associated "edit" alias will be generated (prefix e): `e,`.
+For every alias an associated "edit" alias will be generated automatically (prefix e): `e,`.
 
 2. **Smart Tab Completion**:
-- Works with both full commands and aliases
+- Works with both full command and aliases
 - Supports fuzzy matching
 - Shows preview window with snippet content
 
@@ -136,7 +136,7 @@ rsnip edit --ctype shell --input back<tab>
 
 ### Template System
 
-RSnip implements a powerful template engine with:
+RSnip implements a template engine with:
 
 1. **Built-in Filters**:
 ```
