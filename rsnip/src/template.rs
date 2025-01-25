@@ -6,7 +6,7 @@ use minijinja::{Environment, Error, ErrorKind};
 use std::collections::HashMap;
 use std::process::Command;
 use thiserror::Error;
-use tracing::{debug, error, instrument, trace, warn};
+use tracing::{debug, error, info, instrument, trace, warn};
 
 #[derive(Error, Debug)]
 pub enum TemplateError {
@@ -28,7 +28,7 @@ pub struct TemplateContext {
 
 // Helper function to execute shell commands safely
 fn execute_shell_command(cmd: &str) -> Result<String, Error> {
-    warn!("Executing shell command during template interpolation: {}", cmd);
+    info!("Executing shell command during template interpolation: {}", cmd);
 
     // Additional security checks for dangerous command patterns
     let dangerous_patterns = [
