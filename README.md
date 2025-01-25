@@ -27,6 +27,8 @@ A powerful command-line snippet manager that helps organize, find, and reuse tex
   - Per-snippet-type settings
 - **Developer-Friendly**: Comprehensive debugging support
 
+[![asciicast](https://asciinema.org/a/699818.svg)](https://asciinema.org/a/699818)
+
 ## 🚀 Quick Start
 
 ### Installation
