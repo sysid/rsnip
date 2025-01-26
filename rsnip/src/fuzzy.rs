@@ -99,14 +99,6 @@ pub fn run_fuzzy_finder(
         return Ok(None);
     }
 
-    // Early exact match check
-    if !initial_query.is_empty() {
-        if let Some(exact) = items.iter().find(|i| i.name == initial_query) {
-            debug!("Found exact match: {}", exact.name);
-            return Ok(Some(exact.name.clone()));
-        }
-    }
-
     // If we have a non-empty query, check for exact match first
     if !initial_query.is_empty() {
         // Check for exact match first
