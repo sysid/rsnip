@@ -1,6 +1,6 @@
 [package]
 name = "rsnip"
-version = "0.5.5"
+version = "0.5.6"
 edition = "2021"
 authors = ["sysid <sysid@gmx.de>"]
 description = "A universal command-line snippet manager"
