@@ -168,6 +168,18 @@ git commit -m "Update: {{ current_date|strftime('%Y-%m-%d') }} - {{ 'git status 
 ---
 ```
 
+4. **Snippets to be handled as Literal Text**:
+
+If you have snippets which happen to contain Jinja2-style template syntax, you can escape them like:
+```
+{% raw %}
+gh run list --workflow "$workflow" \
+    --status success --json name,startedAt,headBranch,databaseId,status \
+    --template '{{range .}}{{tablerow (autocolor "white+h" .name) (autocolor "blue+h" .startedAt) .headBranch (autocolor "cyan" .databaseId) (autocolor "grey+h" .status)}}{{end}}' \
+    --limit 20
+{% endraw %}
+```
+
 ### Command Reference
 
 ```bash
