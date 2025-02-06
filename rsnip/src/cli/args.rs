@@ -63,6 +63,14 @@ pub enum Commands {
         #[arg(short, long)]
         interactive: bool,
     },
+    CompleteLsp {
+        /// Type of completion
+        #[arg(long)]
+        ctype: Option<String>,
+        /// The text to complete
+        #[arg(long)]
+        input: String,
+    },
     /// Copy text to clipboard
     Copy {
         /// Type of completion

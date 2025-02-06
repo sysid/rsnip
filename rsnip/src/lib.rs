@@ -7,3 +7,4 @@ pub mod fuzzy;
 pub mod infrastructure;
 pub mod path_utils;
 pub mod template;
+pub mod lsp;

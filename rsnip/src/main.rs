@@ -11,7 +11,8 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{fmt, Layer};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
 
     setup_logging(cli.debug);
@@ -67,7 +68,7 @@ fn main() {
         }
     }
 
-    if let Err(e) = execute_command(&cli, &config) {
+    if let Err(e) = execute_command(&cli, &config).await {
         eprintln!("{}", format!("Error: {}", e).red());
         std::process::exit(1);
     }
