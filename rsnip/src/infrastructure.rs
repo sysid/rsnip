@@ -1,3 +1,5 @@
+mod scls_parser;
+
 use crate::domain::{Snippet, SnippetContent, SnippetType};
 use anyhow::{anyhow, Context, Result};
 use arboard::Clipboard;

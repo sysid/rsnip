@@ -9,3 +9,7 @@ description = "General text snippets"
 alias = ","
 source_file = "~/.config/rsnip/shell_snippets.txt"
 description = "Shell command snippets"
+
+[snippet_types.python]
+source_file = "~/.config/helix/snippets/python.toml"
+description = "Python snippets from Helix"
