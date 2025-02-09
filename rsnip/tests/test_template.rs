@@ -1,4 +1,4 @@
-mod template_shell;
+mod test_template_shell;
 
 use chrono::Utc;
 use rsnip::domain::SnippetContent;

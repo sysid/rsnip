@@ -1,4 +1,3 @@
-use crate::domain::SnippetContent;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use minijinja::value::Value;
@@ -7,6 +6,7 @@ use std::collections::HashMap;
 use std::process::Command;
 use thiserror::Error;
 use tracing::{debug, error, info, instrument, trace, warn};
+use crate::domain::tochange::SnippetContent;
 
 #[derive(Error, Debug)]
 pub enum TemplateError {

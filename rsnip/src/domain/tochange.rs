@@ -1,12 +1,7 @@
 use minijinja::Template;
 use std::path::PathBuf;
 use tracing::{instrument, trace};
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct SnippetType {
-    pub name: String,
-    pub source_file: PathBuf,
-}
+use crate::domain::parser::SnippetFormat;
 
 #[derive(Clone, Debug)]
 pub enum SnippetContent {

@@ -1,6 +1,5 @@
-// configuration
-use crate::domain::SnippetType;
-use crate::path_utils::expand_path;
+use crate::domain::parser::{SnippetFormat, SnippetType};
+use crate::util::path_utils::expand_path;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -25,16 +24,12 @@ pub struct SnippetTypeConfig {
     pub description: Option<String>,
     #[serde(default)]
     pub alias: Option<String>,
+    #[serde(default = "default_format")]
+    pub format: String,
 }
 
-impl Default for Settings {
-    fn default() -> Self {
-        Self {
-            snippet_types: default_snippet_types(),
-            config_paths: default_config_paths(),
-            active_config_path: None,
-        }
-    }
+fn default_format() -> String {
+    "default".to_string()
 }
 
 fn default_config_paths() -> Vec<PathBuf> {
@@ -56,9 +51,20 @@ fn default_snippet_types() -> HashMap<String, SnippetTypeConfig> {
             source_file: PathBuf::from("completion_source.txt"),
             description: Some("Default snippet type".to_string()),
             alias: None,
+            format: "default".to_string(),
         },
     );
     types
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            snippet_types: default_snippet_types(),
+            config_paths: default_config_paths(),
+            active_config_path: None,
+        }
+    }
 }
 
 impl Settings {
@@ -109,20 +115,23 @@ impl Settings {
         Ok(settings)
     }
 
-    pub fn get_snippet_type(&self, name: &str) -> Option<SnippetTypeConfig> {
-        self.snippet_types.get(name).cloned()
+    pub fn get_snippet_type(&self, name: &str) -> Option<SnippetType> {
+        self.snippet_types.get(name).map(|config| {
+            let format = SnippetFormat::from_str(&config.format)
+                .unwrap_or(SnippetFormat::Default);
+
+            SnippetType {
+                name: name.to_string(),
+                source_file: config.source_file.clone(),
+                format,
+            }
+        })
     }
 }
 
-// Update infrastructure.rs to use the new config
 #[instrument(level = "debug")]
 pub fn get_snippet_type(config: &Settings, name: &str) -> Result<SnippetType> {
-    let snippet_config = config.get_snippet_type(name).ok_or_else(|| {
+    config.get_snippet_type(name).ok_or_else(|| {
         anyhow::anyhow!("Unknown snippet type: {}, update your configuration.", name)
-    })?;
-
-    Ok(SnippetType {
-        name: name.to_string(),
-        source_file: snippet_config.source_file,
     })
 }

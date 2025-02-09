@@ -1,5 +1,3 @@
-use crate::domain::SnippetType;
-use crate::domain::{Snippet, SnippetContent};
 use anyhow::Result;
 use crossterm::{
     execute,
@@ -10,6 +8,8 @@ use fuzzy_matcher::skim::SkimMatcherV2;
 use skim::{prelude::*, Skim};
 use std::sync::Arc;
 use tracing::{debug, trace};
+use crate::domain::parser::SnippetType;
+use crate::domain::tochange::{Snippet, SnippetContent};
 
 // Struct to hold snippet text, preview and source info
 #[derive(Clone)]
