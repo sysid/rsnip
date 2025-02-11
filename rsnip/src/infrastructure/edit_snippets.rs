@@ -1,11 +1,8 @@
+use crate::domain::parser::SnippetType;
+use anyhow::{anyhow, Context, Result};
 use std::env;
 use std::process::Command;
-use anyhow::{anyhow, Context, Result};
-use arboard::Clipboard;
-use crossterm::style::Stylize;
 use tracing::instrument;
-use crate::domain::parser::SnippetType;
-use crate::domain::tochange::{Snippet, SnippetContent};
 
 // Embed default completions file at compile time
 const DEFAULT_COMPLETIONS: &str = include_str!("../default_completions.txt");

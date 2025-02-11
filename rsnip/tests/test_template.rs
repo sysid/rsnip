@@ -1,7 +1,7 @@
 mod test_template_shell;
 
 use chrono::Utc;
-use rsnip::domain::SnippetContent;
+use rsnip::domain::content::SnippetContent;
 use rsnip::template::TemplateEngine;
 
 #[test]

@@ -1,7 +1,7 @@
+use crate::domain::parser::SnippetFormat;
 use minijinja::Template;
 use std::path::PathBuf;
 use tracing::{instrument, trace};
-use crate::domain::parser::SnippetFormat;
 
 #[derive(Clone, Debug)]
 pub enum SnippetContent {
@@ -22,13 +22,6 @@ impl PartialEq for SnippetContent {
             _ => false,
         }
     }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Snippet {
-    pub name: String,
-    pub content: SnippetContent,
-    pub comments: Vec<String>,
 }
 
 // Implement template detection

@@ -8,8 +8,9 @@ use fuzzy_matcher::skim::SkimMatcherV2;
 use skim::{prelude::*, Skim};
 use std::sync::Arc;
 use tracing::{debug, trace};
+use crate::domain::content::SnippetContent;
 use crate::domain::parser::SnippetType;
-use crate::domain::tochange::{Snippet, SnippetContent};
+use crate::domain::snippet::Snippet;
 
 // Struct to hold snippet text, preview and source info
 #[derive(Clone)]

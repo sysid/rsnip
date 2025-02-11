@@ -1,4 +1,4 @@
-use rsnip::domain::SnippetContent;
+use rsnip::domain::content::SnippetContent;
 use rsnip::template::TemplateEngine;
 
 #[test]

@@ -6,7 +6,7 @@ use itertools::Itertools;
 use tracing::debug;
 use crate::application::snippet_service::SnippetService;
 use crate::config::{get_snippet_type, Settings};
-use crate::infrastructure::tochange::edit_snips_file;
+use crate::infrastructure::edit_snippets::edit_snips_file;
 use crate::util::path_utils::expand_path;
 
 pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {

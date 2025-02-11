@@ -1,5 +1,5 @@
 use crate::domain::parser::SnippetType;
-use crate::domain::tochange::Snippet;
+use crate::domain::snippet::Snippet;
 use crate::fuzzy;
 use crate::infrastructure;
 use crate::infrastructure::clipboard::copy_to_clipboard;

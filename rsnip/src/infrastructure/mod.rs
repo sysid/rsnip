@@ -1,3 +1,3 @@
 pub mod parsers;
 pub mod clipboard;
-pub mod tochange;
+pub mod edit_snippets;

@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::process::Command;
 use thiserror::Error;
 use tracing::{debug, error, info, instrument, trace, warn};
-use crate::domain::tochange::SnippetContent;
+use crate::domain::content::SnippetContent;
 
 #[derive(Error, Debug)]
 pub enum TemplateError {

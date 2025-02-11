@@ -1,7 +1,7 @@
 use std::path::Path;
 use anyhow::Result;
 use std::path::PathBuf;
-use crate::domain::tochange::Snippet;
+use crate::domain::snippet::Snippet;
 
 /// Trait defining the interface for snippet parsers
 pub trait SnippetParser: Send + Sync {

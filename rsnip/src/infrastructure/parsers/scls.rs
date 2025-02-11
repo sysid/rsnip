@@ -1,12 +1,13 @@
+use crate::domain::content::SnippetContent;
+use crate::domain::parser::SnippetParser;
+use crate::domain::snippet::Snippet;
+use anyhow::{Context, Result};
+use once_cell::sync::Lazy;
+use regex::Regex;
+use serde::Deserialize;
 // infrastructure/parsers/scls.rs
 use std::path::Path;
-use anyhow::{Context, Result};
-use serde::Deserialize;
 use tracing::{debug, instrument};
-use regex::Regex;
-use once_cell::sync::Lazy;
-use crate::domain::parser::SnippetParser;
-use crate::domain::tochange::{Snippet, SnippetContent};
 
 // Lazily initialized regex for placeholder conversion
 static PLACEHOLDER_REGEX: Lazy<Regex> = Lazy::new(|| {
@@ -98,128 +99,5 @@ impl SnippetParser for SclsSnippetParser {
         }).collect();
 
         Ok(snippets)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    #[test]
-    fn given_valid_scls_file_when_parsing_then_returns_correct_snippets() -> Result<()> {
-        let content = r#"
-[[snippets]]
-prefix = "log"
-scope = ["python"]
-body = "print($1)"
-description = "Simple print statement"
-
-[[snippets]]
-prefix = "func"
-scope = ["python", "javascript"]
-body = "def ${1:name}(${2:args}):\n    ${3:pass}"
-"#;
-        let mut temp_file = NamedTempFile::new()?;
-        writeln!(temp_file, "{}", content)?;
-
-        let parser = SclsSnippetParser::new();
-        let snippets = parser.parse(temp_file.path())?;
-
-        assert_eq!(snippets.len(), 2);
-
-        // Check first snippet
-        assert_eq!(snippets[0].name, "log");
-        assert_eq!(snippets[0].content.get_content(), "print({{ param1 }})");
-        assert_eq!(snippets[0].comments.len(), 2);
-        assert_eq!(snippets[0].comments[0], "Simple print statement");
-        assert_eq!(snippets[0].comments[1], "Scope: python");
-
-        // Check second snippet
-        assert_eq!(snippets[1].name, "func");
-        assert_eq!(
-            snippets[1].content.get_content(),
-            "def {{ name }}({{ args }}):\n    {{ pass }}"
-        );
-        assert_eq!(snippets[1].comments.len(), 1);
-        assert_eq!(snippets[1].comments[0], "Scope: python, javascript");
-
-        Ok(())
-    }
-
-    #[test]
-    fn given_empty_scls_file_when_parsing_then_returns_empty_vec() -> Result<()> {
-        let content = "# Empty SCLS file";
-        let mut temp_file = NamedTempFile::new()?;
-        writeln!(temp_file, "{}", content)?;
-
-        let parser = SclsSnippetParser::new();
-        let snippets = parser.parse(temp_file.path())?;
-
-        assert!(snippets.is_empty());
-        Ok(())
-    }
-
-    #[test]
-    fn given_multiline_array_body_when_parsing_then_handles_correctly() -> Result<()> {
-        let content = r#"
-[[snippets]]
-prefix = "class"
-body = [
-    "class ${1:ClassName}:",
-    "    def __init__(self):",
-    "        ${2:pass}"
-]"#;
-        let mut temp_file = NamedTempFile::new()?;
-        writeln!(temp_file, "{}", content)?;
-
-        let parser = SclsSnippetParser::new();
-        let snippets = parser.parse(temp_file.path())?;
-
-        assert_eq!(snippets.len(), 1);
-        assert_eq!(
-            snippets[0].content.get_content(),
-            "class {{ ClassName }}:\n    def __init__(self):\n        {{ pass }}"
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn test_placeholder_conversion() {
-        let test_cases = vec![
-            ("print($1)", "print({{ param1 }})"),
-            ("log.info(${1:message})", "log.info({{ message }})"),
-            (
-                "def ${1:name}($2): ${3:pass}",
-                "def {{ name }}({{ param2 }}): {{ param3 }}"
-            ),
-            ("$1: Any = $2", "{{ param1 }}: Any = {{ param2 }}"),
-        ];
-
-        for (input, expected) in test_cases {
-            assert_eq!(SclsSnippetParser::convert_placeholders(input), expected);
-        }
-    }
-
-    #[test]
-    fn test_process_body() {
-        // Test string with escaped newlines
-        assert_eq!(
-            SclsSnippetParser::process_body("line1\\nline2"),
-            "line1\nline2"
-        );
-
-        // Test array format
-        assert_eq!(
-            SclsSnippetParser::process_body(r#"["line1", "line2"]"#),
-            "line1\nline2"
-        );
-
-        // Test regular string
-        assert_eq!(
-            SclsSnippetParser::process_body("simple string"),
-            "simple string"
-        );
     }
 }

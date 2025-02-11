@@ -1,7 +1,9 @@
-use rsnip::domain::{Snippet, SnippetContent, SnippetType};
 use rsnip::fuzzy::{create_skim_items, run_fuzzy_finder};
 use skim::{ItemPreview, PreviewContext};
 use std::path::PathBuf;
+use rsnip::domain::content::SnippetContent;
+use rsnip::domain::parser::{SnippetFormat, SnippetType};
+use rsnip::domain::snippet::Snippet;
 
 fn create_test_snippets() -> Vec<Snippet> {
     vec![
@@ -27,6 +29,7 @@ fn create_test_snippet_type() -> SnippetType {
     SnippetType {
         name: "test".to_string(),
         source_file: PathBuf::from("test_snippets.txt"),
+        format: SnippetFormat::Default,
     }
 }
 
@@ -109,6 +112,7 @@ fn given_snippets_when_creating_skim_items_then_returns_formatted_items() {
     let snippet_type = SnippetType {
         name: "test".to_string(),
         source_file: PathBuf::from("test.txt"),
+        format: SnippetFormat::Default,
     };
 
     // Act
@@ -171,6 +175,7 @@ fn test_fuzzy_finder_output_is_clean() {
     let snippet_type = SnippetType {
         name: "test".to_string(),
         source_file: PathBuf::from("test.txt"),
+        format: SnippetFormat::Default,
     };
 
     let result = run_fuzzy_finder(&items, &snippet_type, "test").unwrap();
