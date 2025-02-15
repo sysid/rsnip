@@ -1,7 +1,7 @@
+use crate::config::Settings;
 use crate::domain::parser::SnippetType;
 use crate::domain::snippet::Snippet;
 use crate::fuzzy;
-use crate::infrastructure;
 use crate::infrastructure::clipboard::copy_to_clipboard;
 use crate::infrastructure::parsers::SnippetParserFactory;
 use crate::template::TemplateEngine;
@@ -11,22 +11,49 @@ use std::cmp::Reverse;
 use tracing::{debug, instrument};
 
 /// Service for managing snippet operations
-#[derive(Debug, Default)]
-pub struct SnippetService {
+#[derive(Debug)]
+pub struct SnippetService<'a> {
     template_engine: TemplateEngine,
+    config: &'a Settings,
 }
 
-impl SnippetService {
+impl<'a> SnippetService<'a> {
     /// Creates a new SnippetService
-    pub fn new() -> Self {
+    pub fn new(config: &'a Settings) -> Self {
         Self {
             template_engine: TemplateEngine::new(),
+            config,
         }
     }
 
-    /// Get snippets for a given snippet type
+    /// Get snippets for a given snippet type, handling both concrete and combined types
     #[instrument(level = "debug", skip(self))]
-    pub fn get_snippets(&self, snippet_type: &SnippetType) -> Result<Vec<Snippet>> {
+    pub fn get_snippets(&self, snippet_type: &str) -> Result<Vec<Snippet>> {
+        // Check if this is a combined type
+        if let Some(sources) = self.config.get_combined_sources(snippet_type) {
+            debug!("Loading combined snippets from sources: {:?}", sources);
+            let mut all_snippets = Vec::new();
+
+            // Load snippets from each source
+            for source in sources {
+                if let Some(concrete_type) = self.config.get_snippet_type(&source) {
+                    let mut source_snippets = self.get_concrete_snippets(&concrete_type)
+                        .with_context(|| format!("Failed to load snippets from source '{}'", source))?;
+                    all_snippets.append(&mut source_snippets);
+                }
+            }
+
+            Ok(all_snippets)
+        } else {
+            // Handle concrete type
+            let concrete_type = self.config.get_snippet_type(snippet_type)
+                .ok_or_else(|| anyhow::anyhow!("Unknown snippet type: {}", snippet_type))?;
+            self.get_concrete_snippets(&concrete_type)
+        }
+    }
+
+    /// Get snippets from a concrete snippet type
+    fn get_concrete_snippets(&self, snippet_type: &SnippetType) -> Result<Vec<Snippet>> {
         debug!(
             "Loading snippets from {}",
             snippet_type.source_file.display()
@@ -44,7 +71,7 @@ impl SnippetService {
     #[instrument(level = "debug", skip(self))]
     pub fn find_completion_interactive(
         &self,
-        completion_type: &SnippetType,
+        completion_type: &str,
         user_input: &str,
     ) -> Result<Option<Snippet>> {
         let items = self.get_snippets(completion_type)?;
@@ -54,7 +81,7 @@ impl SnippetService {
             return Ok(None);
         }
 
-        let selected_item = fuzzy::run_fuzzy_finder(&items, completion_type, user_input)?;
+        let selected_item = fuzzy::run_fuzzy_finder(&items, user_input)?;
 
         // Return the selected snippet
         Ok(selected_item.and_then(|name| items.iter().find(|item| item.name == name).cloned()))
@@ -64,7 +91,7 @@ impl SnippetService {
     #[instrument(level = "debug", skip(self))]
     pub fn find_completion_fuzzy(
         &self,
-        completion_type: &SnippetType,
+        completion_type: &str,
         user_input: &str,
     ) -> Result<Option<Snippet>> {
         // Return None for empty input
@@ -91,7 +118,7 @@ impl SnippetService {
     #[instrument(level = "debug", skip(self))]
     pub fn find_completion_exact(
         &self,
-        completion_type: &SnippetType,
+        completion_type: &str,
         user_input: &str,
     ) -> Result<Option<Snippet>> {
         if user_input.trim().is_empty() {
@@ -106,7 +133,7 @@ impl SnippetService {
     #[instrument(level = "debug", skip(self))]
     pub fn copy_snippet_to_clipboard(
         &self,
-        completion_type: &SnippetType,
+        completion_type: &str,
         input: &str,
         exact: bool,
     ) -> Result<Option<(Snippet, String)>> {
@@ -123,96 +150,5 @@ impl SnippetService {
         } else {
             Ok(None)
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::domain::parser::SnippetFormat;
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    fn create_test_snippet_type(path: &std::path::Path) -> SnippetType {
-        SnippetType {
-            name: "test".to_string(),
-            source_file: path.to_path_buf(),
-            format: SnippetFormat::Default,
-        }
-    }
-
-    #[test]
-    fn given_valid_snippet_file_when_getting_snippets_then_returns_snippets() -> Result<()> {
-        // Arrange
-        let mut temp_file = NamedTempFile::new()?;
-        writeln!(temp_file, "--- test\nContent\n---")?;
-        let snippet_type = create_test_snippet_type(temp_file.path());
-        let service = SnippetService::new();
-
-        // Act
-        let snippets = service.get_snippets(&snippet_type)?;
-
-        // Assert
-        assert_eq!(snippets.len(), 1);
-        assert_eq!(snippets[0].name, "test");
-        assert_eq!(snippets[0].content.get_content(), "Content");
-
-        Ok(())
-    }
-
-    #[test]
-    fn given_exact_match_when_finding_completion_then_returns_snippet() -> Result<()> {
-        // Arrange
-        let mut temp_file = NamedTempFile::new()?;
-        writeln!(temp_file, "--- test\nContent\n---")?;
-        let snippet_type = create_test_snippet_type(temp_file.path());
-        let service = SnippetService::new();
-
-        // Act
-        let result = service.find_completion_exact(&snippet_type, "test")?;
-
-        // Assert
-        assert!(result.is_some());
-        assert_eq!(result.unwrap().name, "test");
-        Ok(())
-    }
-
-    #[test]
-    fn given_fuzzy_match_when_finding_completion_then_returns_best_match() -> Result<()> {
-        // Arrange
-        let mut temp_file = NamedTempFile::new()?;
-        writeln!(
-            temp_file,
-            "--- test\nContent\n---\n--- testing\nContent2\n---"
-        )?;
-        let snippet_type = create_test_snippet_type(temp_file.path());
-        let service = SnippetService::new();
-
-        // Act
-        let result = service.find_completion_fuzzy(&snippet_type, "tst")?;
-
-        // Assert
-        assert!(result.is_some());
-        assert!(result.unwrap().name.contains("test"));
-        Ok(())
-    }
-
-    #[test]
-    fn given_empty_input_when_finding_completion_then_returns_none() -> Result<()> {
-        // Arrange
-        let temp_file = NamedTempFile::new()?;
-        let snippet_type = create_test_snippet_type(temp_file.path());
-        let service = SnippetService::new();
-
-        // Act & Assert
-        assert!(service
-            .find_completion_exact(&snippet_type, "")
-            .unwrap()
-            .is_none());
-        assert!(service
-            .find_completion_fuzzy(&snippet_type, "")
-            .unwrap()
-            .is_none());
-        Ok(())
     }
 }

@@ -18,6 +18,12 @@ pub enum ParserError {
 
 pub struct DefaultSnippetParser;
 
+impl Default for DefaultSnippetParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DefaultSnippetParser {
     pub fn new() -> Self {
         Self

@@ -1,6 +1,4 @@
-use crate::domain::parser::SnippetFormat;
 use minijinja::Template;
-use std::path::PathBuf;
 use tracing::{instrument, trace};
 
 #[derive(Clone, Debug)]

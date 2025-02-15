@@ -5,20 +5,21 @@
 
 # Unset any existing aliases and completions
 complete -r rsnip > /dev/null 2>&1  # Remove any existing completion
-{%- for type, config in snippet_types %}
-{%- if config.alias %}
-unalias {{ config.alias }} 2>/dev/null  # Remove existing alias
-unalias e{{ config.alias }} 2>/dev/null  # Remove existing edit alias
-complete -r "{{ config.alias }}" > /dev/null 2>&1  # Remove existing completion
-complete -r "e{{ config.alias }}" > /dev/null 2>&1  # Remove existing edit completion
+{%- for type in snippet_types %}
+# DEBUG: {{ type }}
+{%- if type.alias %}
+unalias {{ type.alias }} 2>/dev/null  # Remove existing alias
+unalias e{{ type.alias }} 2>/dev/null  # Remove existing edit alias
+complete -r "{{ type.alias }}" > /dev/null 2>&1  # Remove existing completion
+complete -r "e{{ type.alias }}" > /dev/null 2>&1  # Remove existing edit completion
 {%- endif %}
 {%- endfor %}
 
 # Set up aliases
-{%- for type, config in snippet_types %}
-{%- if config.alias %}
-alias {{ config.alias }}="rsnip copy --ctype {{ type }} --input"
-alias e{{ config.alias }}="rsnip edit --ctype {{ type }} --input"
+{%- for type in snippet_types %}
+{%- if type.alias %}
+alias {{ type.alias }}="rsnip copy --ctype {{ type.name }} --input"
+alias e{{ type.alias }}="rsnip edit --ctype {{ type.name }} --input"
 {%- endif %}
 {%- endfor %}
 
@@ -34,16 +35,16 @@ _rsnip_complete() {
     local alias_type=""
     local is_edit=false
     case "${COMP_WORDS[0]}" in
-    {%- for type, config in snippet_types %}
-    {%- if config.alias %}
-        "{{ config.alias }}")
+    {%- for type in snippet_types %}
+    {%- if type.alias %}
+        "{{ type.alias }}")
             is_alias=true
-            alias_type="{{ type }}"
+            alias_type="{{ type.name }}"
             ;;
-        "e{{ config.alias }}")
+        "e{{ type.alias }}")
             is_alias=true
             is_edit=true
-            alias_type="{{ type }}"
+            alias_type="{{ type.name }}"
             ;;
     {%- endif %}
     {%- endfor %}
@@ -130,10 +131,10 @@ fi
 
 # Setup completion for command and all aliases
 complete -F _rsnip_complete rsnip
-{%- for type, config in snippet_types %}
-{%- if config.alias %}
-complete -F _rsnip_complete "{{ config.alias }}"
-complete -F _rsnip_complete "e{{ config.alias }}"
+{%- for type in snippet_types %}
+{%- if type.alias %}
+complete -F _rsnip_complete "{{ type.alias }}"
+complete -F _rsnip_complete "e{{ type.alias }}"
 {%- endif %}
 {%- endfor %}
 

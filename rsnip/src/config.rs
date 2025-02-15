@@ -17,15 +17,25 @@ pub struct Settings {
     pub active_config_path: Option<PathBuf>,
 }
 
-#[derive(Debug, Deserialize, Clone, Serialize)]
-pub struct SnippetTypeConfig {
-    pub source_file: PathBuf,
-    #[serde(default)]
-    pub description: Option<String>,
-    #[serde(default)]
-    pub alias: Option<String>,
-    #[serde(default = "default_format")]
-    pub format: String,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SnippetTypeConfig {
+    Concrete {
+        source_file: PathBuf,
+        #[serde(default)]
+        description: Option<String>,
+        #[serde(default)]
+        alias: Option<String>,
+        #[serde(default = "default_format")]
+        format: String,
+    },
+    Combined {
+        sources: Vec<String>,
+        #[serde(default)]
+        description: Option<String>,
+        #[serde(default)]
+        alias: Option<String>,
+    },
 }
 
 fn default_format() -> String {
@@ -47,7 +57,7 @@ fn default_snippet_types() -> HashMap<String, SnippetTypeConfig> {
     let mut types = HashMap::new();
     types.insert(
         "default".to_string(),
-        SnippetTypeConfig {
+        SnippetTypeConfig::Concrete {
             source_file: PathBuf::from("completion_source.txt"),
             description: Some("Default snippet type".to_string()),
             alias: None,
@@ -106,9 +116,11 @@ impl Settings {
         // Store the active config path
         settings.active_config_path = active_path;
 
-        // Expand paths in snippet types
+        // Expand paths in concrete snippet types
         for config in settings.snippet_types.values_mut() {
-            config.source_file = expand_path(&config.source_file)?;
+            if let SnippetTypeConfig::Concrete { source_file, .. } = config {
+                *source_file = expand_path(&source_file)?;
+            }
         }
 
         debug!("Loaded config: {:?}", settings);
@@ -116,16 +128,30 @@ impl Settings {
     }
 
     pub fn get_snippet_type(&self, name: &str) -> Option<SnippetType> {
-        self.snippet_types.get(name).map(|config| {
-            let format = SnippetFormat::from_str(&config.format)
-                .unwrap_or(SnippetFormat::Default);
+        match self.snippet_types.get(name) {
+            Some(SnippetTypeConfig::Concrete { source_file, format, .. }) => {
+                let format = SnippetFormat::from_str(format)
+                    .unwrap_or(SnippetFormat::Default);
 
-            SnippetType {
-                name: name.to_string(),
-                source_file: config.source_file.clone(),
-                format,
+                Some(SnippetType {
+                    name: name.to_string(),
+                    source_file: source_file.clone(),
+                    format,
+                })
             }
-        })
+            Some(SnippetTypeConfig::Combined { .. }) => {
+                // Return None for combined types as they are handled differently
+                None
+            }
+            None => None,
+        }
+    }
+
+    pub fn get_combined_sources(&self, name: &str) -> Option<Vec<String>> {
+        match self.snippet_types.get(name) {
+            Some(SnippetTypeConfig::Combined { sources, .. }) => Some(sources.clone()),
+            _ => None,
+        }
     }
 }
 
@@ -134,4 +160,104 @@ pub fn get_snippet_type(config: &Settings, name: &str) -> Result<SnippetType> {
     config.get_snippet_type(name).ok_or_else(|| {
         anyhow::anyhow!("Unknown snippet type: {}, update your configuration.", name)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn given_concrete_type_when_getting_snippet_type_then_returns_correct_type() {
+        let mut snippet_types = HashMap::new();
+        snippet_types.insert(
+            "test".to_string(),
+            SnippetTypeConfig::Concrete {
+                source_file: PathBuf::from("test.txt"),
+                description: None,
+                alias: None,
+                format: "default".to_string(),
+            },
+        );
+
+        let settings = Settings {
+            snippet_types,
+            config_paths: vec![],
+            active_config_path: None,
+        };
+
+        let snippet_type = settings.get_snippet_type("test");
+        assert!(snippet_type.is_some());
+        let snippet_type = snippet_type.unwrap();
+        assert_eq!(snippet_type.name, "test");
+        assert_eq!(snippet_type.source_file, PathBuf::from("test.txt"));
+        assert_eq!(snippet_type.format, SnippetFormat::Default);
+    }
+
+    #[test]
+    fn given_combined_type_when_getting_snippet_type_then_returns_none() {
+        let mut snippet_types = HashMap::new();
+        snippet_types.insert(
+            "combined".to_string(),
+            SnippetTypeConfig::Combined {
+                sources: vec!["source1".to_string(), "source2".to_string()],
+                description: None,
+                alias: None,
+            },
+        );
+
+        let settings = Settings {
+            snippet_types,
+            config_paths: vec![],
+            active_config_path: None,
+        };
+
+        assert!(settings.get_snippet_type("combined").is_none());
+    }
+
+    #[test]
+    fn given_combined_type_when_getting_sources_then_returns_source_list() {
+        let mut snippet_types = HashMap::new();
+        let sources = vec!["source1".to_string(), "source2".to_string()];
+        snippet_types.insert(
+            "combined".to_string(),
+            SnippetTypeConfig::Combined {
+                sources: sources.clone(),
+                description: None,
+                alias: None,
+            },
+        );
+
+        let settings = Settings {
+            snippet_types,
+            config_paths: vec![],
+            active_config_path: None,
+        };
+
+        let result = settings.get_combined_sources("combined");
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), sources);
+    }
+
+    #[test]
+    fn given_concrete_type_when_getting_sources_then_returns_none() {
+        let mut snippet_types = HashMap::new();
+        snippet_types.insert(
+            "test".to_string(),
+            SnippetTypeConfig::Concrete {
+                source_file: PathBuf::from("test.txt"),
+                description: None,
+                alias: None,
+                format: "default".to_string(),
+            },
+        );
+
+        let settings = Settings {
+            snippet_types,
+            config_paths: vec![],
+            active_config_path: None,
+        };
+
+        assert!(settings.get_combined_sources("test").is_none());
+    }
 }

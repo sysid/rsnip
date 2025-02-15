@@ -5,19 +5,18 @@ use std::fs;
 use itertools::Itertools;
 use tracing::debug;
 use crate::application::snippet_service::SnippetService;
-use crate::config::{get_snippet_type, Settings};
+use crate::config::{get_snippet_type, Settings, SnippetTypeConfig};
 use crate::infrastructure::edit_snippets::edit_snips_file;
 use crate::util::path_utils::expand_path;
 
 pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
-    // Create SnippetService instance
-    let service = SnippetService::new();
+    // Create SnippetService instance with config reference
+    let service = SnippetService::new(config);
 
     match &cli.command {
         Some(Commands::List { ctype, prefix }) => {
             let ctype = ctype.as_deref().unwrap_or("default");
-            let snippet_type = get_snippet_type(config, ctype)?;
-            let mut snippets = service.get_snippets(&snippet_type)?;
+            let mut snippets = service.get_snippets(ctype)?;
 
             // Filter by prefix if provided
             if let Some(prefix) = prefix {
@@ -86,7 +85,7 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             // If input is provided, find the snippet to edit
             let line_number = if let Some(input) = input {
                 // Get snippet to find its position
-                let snippets = service.get_snippets(&snippet_type)?;
+                let snippets = service.get_snippets(ctype)?;
                 snippets.iter()
                     .position(|s| s.name == *input)
                     .map(|pos| pos + 1)
@@ -104,10 +103,15 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             } else {
                 println!("\nAvailable snippet types:");
                 for (name, cfg) in &config.snippet_types {
-                    if let Some(desc) = &cfg.description {
-                        println!("  {}: {}", name, desc);
-                    } else {
-                        println!("  {}", name);
+                    match cfg {
+                        SnippetTypeConfig::Concrete { description, .. } |
+                        SnippetTypeConfig::Combined { description, .. } => {
+                            if let Some(desc) = description {
+                                println!("  {}: {}", name, desc);
+                            } else {
+                                println!("  {}", name);
+                            }
+                        }
                     }
                 }
             }
@@ -119,23 +123,21 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             interactive,
         }) => {
             let ctype = ctype.as_deref().unwrap_or("default");
-            let snippet_type = get_snippet_type(config, ctype)?;
             let input = input.as_deref().unwrap_or("");
 
             if *interactive {
-                if let Some(item) = service.find_completion_interactive(&snippet_type, input)? {
+                if let Some(item) = service.find_completion_interactive(ctype, input)? {
                     println!("{}", item.name);
                 }
-            } else if let Some(item) = service.find_completion_exact(&snippet_type, input)? {
+            } else if let Some(item) = service.find_completion_exact(ctype, input)? {
                 println!("{}", item.name);
             }
             Ok(())
         }
         Some(Commands::Copy { ctype, input }) => {
             let ctype = ctype.as_deref().unwrap_or("default");
-            let snippet_type = get_snippet_type(config, ctype)?;
 
-            match service.copy_snippet_to_clipboard(&snippet_type, input, true)? {
+            match service.copy_snippet_to_clipboard(ctype, input, true)? {
                 Some((snippet, rendered_content)) => {
                     // only print comments if they exist
                     if !snippet.comments.is_empty() {

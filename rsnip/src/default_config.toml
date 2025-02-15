@@ -15,3 +15,8 @@ format = "default"
 source_file = "~/.config/helix/snippets/snippets.toml"
 description = "General snippets from Helix/Zed without context binding"
 format = "scls"
+
+[snippet_types.combined]
+alias = ",,"
+sources = ["snippets", "general", "shell"]
+description = "Combined snippets"

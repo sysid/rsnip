@@ -4,13 +4,15 @@ use std::path::PathBuf;
 use rsnip::domain::content::SnippetContent;
 use rsnip::domain::parser::{SnippetFormat, SnippetType};
 use rsnip::domain::snippet::Snippet;
+use anyhow::Result;
 
-fn create_test_snippets() -> Vec<Snippet> {
-    vec![
+// Helper function to create consistent test data
+fn create_test_data() -> (Vec<Snippet>, SnippetType) {
+    let snippets = vec![
         Snippet {
             name: "apple".to_string(),
             content: SnippetContent::Static("This is an apple".to_string()),
-            comments: Vec::new(), // Add empty comments vector
+            comments: Vec::new(),
         },
         Snippet {
             name: "apricot".to_string(),
@@ -22,75 +24,72 @@ fn create_test_snippets() -> Vec<Snippet> {
             content: SnippetContent::Static("This is a banana".to_string()),
             comments: Vec::new(),
         },
-    ]
-}
+    ];
 
-fn create_test_snippet_type() -> SnippetType {
-    SnippetType {
+    let snippet_type = SnippetType {
         name: "test".to_string(),
         source_file: PathBuf::from("test_snippets.txt"),
         format: SnippetFormat::Default,
-    }
+    };
+
+    (snippets, snippet_type)
 }
 
 #[test]
-fn given_exact_match_when_fuzzy_finder_then_returns_immediately() {
-    let items = create_test_snippets();
-    let snippet_type = create_test_snippet_type();
-    let result = run_fuzzy_finder(&items, &snippet_type, "apple").unwrap();
+fn given_exact_match_when_fuzzy_finder_then_returns_immediately() -> Result<()> {
+    let (items, snippet_type) = create_test_data();
+    let result = run_fuzzy_finder(&items, "apple")?;
     assert_eq!(result, Some("apple".to_string()));
+    Ok(())
 }
 
 #[test]
-fn given_single_partial_match_when_fuzzy_finder_then_auto_selects() {
-    let items = create_test_snippets();
-    let snippet_type = create_test_snippet_type();
-    let result = run_fuzzy_finder(&items, &snippet_type, "ban").unwrap();
+fn given_single_partial_match_when_fuzzy_finder_then_auto_selects() -> Result<()> {
+    let (items, snippet_type) = create_test_data();
+    let result = run_fuzzy_finder(&items, "ban")?;
     assert_eq!(result, Some("banana".to_string()));
+    Ok(())
 }
 
 #[test]
 #[ignore = "This test is interactive via Makefile"]
-fn given_no_matches_when_fuzzy_finder_then_shows_interface() {
-    let items = create_test_snippets();
-    let snippet_type = create_test_snippet_type();
+fn given_multiple_matches_when_fuzzy_finder_then_shows_interface() -> Result<()> {
+    let (items, snippet_type) = create_test_data();
+    let result = run_fuzzy_finder(&items, "ap")?;
 
-    // Use a query that won't match any items
-    let result = run_fuzzy_finder(&items, &snippet_type, "xyz").unwrap();
-
-    // The result should be None since we can't simulate user interaction in tests,
-    // but the function should have attempted to show the interface rather than
-    // returning early
-    assert!(result.is_none());
+    // Since we can't simulate user interaction in unit tests,
+    // we can only verify it doesn't return an invalid result
+    if let Some(name) = result {
+        assert!(name == "apple" || name == "apricot",
+            "Expected either 'apple' or 'apricot', got '{}'", name);
+    }
+    Ok(())
 }
 
-// #[test]
-// fn given_multiple_matches_when_fuzzy_finder_then_shows_interface() {
-//     let items = create_test_snippets();
-//     // This will open the fuzzy finder interface when run manually
-//     // For automated testing, we can only verify it doesn't return immediately
-//     let result = run_fuzzy_finder(&items, "ap").unwrap();
-//     assert!(
-//         result.is_none()
-//             || result == Some("apple".to_string())
-//             || result == Some("apricot".to_string())
-//     );
-// }
+#[test]
+#[ignore = "todo fix"]
+fn given_empty_query_when_fuzzy_finder_then_shows_all() -> Result<()> {
+    let (items, snippet_type) = create_test_data();
+    let result = run_fuzzy_finder(&items, "")?;
 
-// #[test]
-// fn given_empty_query_when_fuzzy_finder_then_shows_all() {
-//     let items = create_test_snippets();
-//     let result = run_fuzzy_finder(&items, "").unwrap();
-//     // Should open interface showing all items
-//     assert!(result.is_none() || items.iter().any(|item| Some(item.name.clone()) == result));
-// }
+    // For empty query, it should either:
+    // 1. Return None (if user cancels)
+    // 2. Return a valid snippet name (if user selects one)
+    if let Some(name) = result {
+        assert!(
+            items.iter().any(|item| item.name == name),
+            "Returned name '{}' not found in test items", name
+        );
+    }
+    Ok(())
+}
 
 #[test]
-fn given_empty_items_when_fuzzy_finder_then_returns_none() {
+fn given_empty_items_when_fuzzy_finder_then_returns_none() -> Result<()> {
     let items: Vec<Snippet> = vec![];
-    let snippet_type = create_test_snippet_type();
-    let result = run_fuzzy_finder(&items, &snippet_type, "anything").unwrap();
+    let result = run_fuzzy_finder(&items, "anything")?;
     assert_eq!(result, None);
+    Ok(())
 }
 
 #[test]
@@ -100,7 +99,7 @@ fn given_snippets_when_creating_skim_items_then_returns_formatted_items() {
         Snippet {
             name: "test1".to_string(),
             content: SnippetContent::Static("line1\nline2\nline3".to_string()),
-            comments: Vec::new(),
+            comments: vec!["A test comment".to_string()],
         },
         Snippet {
             name: "test2".to_string(),
@@ -109,24 +108,15 @@ fn given_snippets_when_creating_skim_items_then_returns_formatted_items() {
         },
     ];
 
-    let snippet_type = SnippetType {
-        name: "test".to_string(),
-        source_file: PathBuf::from("test.txt"),
-        format: SnippetFormat::Default,
-    };
-
     // Act
-    let items = create_skim_items(&snippets, &snippet_type);
+    let items = create_skim_items(&snippets);
 
     // Assert
-    // Check that we get the correct number of items
     assert_eq!(items.len(), 2);
-
-    // Test output (name) for both items
     assert_eq!(items[0].text(), "test1");
     assert_eq!(items[1].text(), "test2");
 
-    // Create a preview context
+    // Test preview with content and comments
     let preview_context = PreviewContext {
         query: "",
         cmd_query: "",
@@ -138,16 +128,17 @@ fn given_snippets_when_creating_skim_items_then_returns_formatted_items() {
         selections: &[],
     };
 
-    // Test preview content
     if let ItemPreview::AnsiText(preview) = items[0].preview(preview_context) {
         assert!(preview.contains("line1\nline2\nline3"));
         assert!(preview.contains("Name"));
         assert!(preview.contains("Content"));
+        assert!(preview.contains("Comments"));
+        assert!(preview.contains("A test comment"));
     } else {
         panic!("Expected AnsiText preview");
     }
 
-    // Create a preview context
+    // Test preview with empty content
     let preview_context = PreviewContext {
         query: "",
         cmd_query: "",
@@ -163,22 +154,26 @@ fn given_snippets_when_creating_skim_items_then_returns_formatted_items() {
         assert!(preview.contains("No content"));
         assert!(preview.contains("Name"));
         assert!(preview.contains("Content"));
+        assert!(!preview.contains("Comments")); // No comments section for empty comments
     } else {
         panic!("Expected AnsiText preview");
     }
 }
 
 #[test]
-#[ignore = "does not work in IDE"]
-fn test_fuzzy_finder_output_is_clean() {
-    let items = create_test_snippets();
-    let snippet_type = SnippetType {
-        name: "test".to_string(),
-        source_file: PathBuf::from("test.txt"),
-        format: SnippetFormat::Default,
-    };
+#[ignore = "Interactive test requires terminal"]
+fn given_no_matches_when_fuzzy_finder_then_shows_interface() -> Result<()> {
+    let (items, snippet_type) = create_test_data();
+    let result = run_fuzzy_finder(&items, "xyz")?;
+    assert!(result.is_none());
+    Ok(())
+}
 
-    let result = run_fuzzy_finder(&items, &snippet_type, "test").unwrap();
-    // Verify no ANSI escape sequences in output
+#[test]
+#[ignore = "Interactive test requires terminal"]
+fn test_fuzzy_finder_output_is_clean() -> Result<()> {
+    let (items, snippet_type) = create_test_data();
+    let result = run_fuzzy_finder(&items, "test")?;
     assert!(result.as_ref().map_or(true, |s| !s.contains("\x1B[")));
+    Ok(())
 }

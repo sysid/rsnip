@@ -160,7 +160,7 @@ fn date_format(value: Value, args: &[Value]) -> Result<Value, Error> {
     let date_str = value
         .as_str()
         .ok_or_else(|| Error::new(ErrorKind::InvalidOperation, "Expected string date"))?;
-    let format = args.get(0).and_then(|v| v.as_str()).unwrap_or("%Y-%m-%d");
+    let format = args.first().and_then(|v| v.as_str()).unwrap_or("%Y-%m-%d");
 
     // Parse date and format
     let date = DateTime::parse_from_rfc3339(date_str)
@@ -179,7 +179,7 @@ fn subtract_days(value: Value, args: &[Value]) -> Result<Value, Error> {
     let date = DateTime::parse_from_rfc3339(date_str)
         .map_err(|e| Error::new(ErrorKind::InvalidOperation, format!("Invalid date: {}", e)))?;
 
-    let days = args.get(0).and_then(|v| v.as_i64()).unwrap_or(0);
+    let days = args.first().and_then(|v| v.as_i64()).unwrap_or(0);
 
     let new_date = date - chrono::Duration::days(days);
     Ok(Value::from(new_date.to_rfc3339()))
@@ -194,7 +194,7 @@ fn add_days(value: Value, args: &[Value]) -> Result<Value, Error> {
     let date = DateTime::parse_from_rfc3339(date_str)
         .map_err(|e| Error::new(ErrorKind::InvalidOperation, format!("Invalid date: {}", e)))?;
 
-    let days = args.get(0).and_then(|v| v.as_i64()).unwrap_or(0);
+    let days = args.first().and_then(|v| v.as_i64()).unwrap_or(0);
 
     let new_date = date + chrono::Duration::days(days);
     Ok(Value::from(new_date.to_rfc3339()))

@@ -1,19 +1,9 @@
 use anyhow::Result;
-use rsnip::domain::content::SnippetContent;
-use rsnip::domain::parser::{SnippetFormat, SnippetType};
-use rsnip::domain::snippet::Snippet;
+use rsnip::domain::parser::SnippetFormat;
 use rsnip::infrastructure::parsers::SnippetParserFactory;
 use std::io::Write;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
-
-fn create_test_snippet_type(path: &std::path::Path) -> SnippetType {
-    SnippetType {
-        name: "test".to_string(),
-        source_file: path.to_path_buf(),
-        format: SnippetFormat::Scls,
-    }
-}
 
 #[test]
 fn given_valid_scls_file_when_parse_then_returns_snippets() -> Result<()> {
@@ -32,7 +22,6 @@ body = "def ${1:name}(${2:args}):\n    ${3:pass}"
 "#;
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "{}", content)?;
-    let snippet_type = create_test_snippet_type(temp_file.path());
     let parser = SnippetParserFactory::create(SnippetFormat::Scls);
 
     // Act
@@ -66,7 +55,6 @@ fn given_empty_scls_file_when_parse_then_returns_empty_vec() -> Result<()> {
     let content = "# Empty SCLS file";
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "{}", content)?;
-    let snippet_type = create_test_snippet_type(temp_file.path());
     let parser = SnippetParserFactory::create(SnippetFormat::Scls);
 
     // Act
@@ -91,7 +79,6 @@ class ${1:ClassName}:
 "#;
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "{}", content)?;
-    let snippet_type = create_test_snippet_type(temp_file.path());
     let parser = SnippetParserFactory::create(SnippetFormat::Scls);
 
     // Act
@@ -115,7 +102,6 @@ malformed = toml
 "#;
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "{}", content)?;
-    let snippet_type = create_test_snippet_type(temp_file.path());
     let parser = SnippetParserFactory::create(SnippetFormat::Scls);
 
     // Act
@@ -136,7 +122,6 @@ body = "${1:first} ${2:second} $3"
 "#;
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "{}", content)?;
-    let snippet_type = create_test_snippet_type(temp_file.path());
     let parser = SnippetParserFactory::create(SnippetFormat::Scls);
 
     // Act

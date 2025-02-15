@@ -5,6 +5,7 @@ use std::process::Command;
 use tracing::instrument;
 
 // Embed default completions file at compile time
+#[allow(dead_code)]
 const DEFAULT_COMPLETIONS: &str = include_str!("../default_completions.txt");
 
 #[instrument(level = "debug")]
@@ -31,7 +32,7 @@ pub fn edit_snips_file(snippet_type: &SnippetType, line_number: Option<usize>) -
                 cmd.arg(format!("+{}", line));
             }
             "code" | "codium" => {
-                cmd.arg(format!("--goto"));
+                cmd.arg("--goto");
                 cmd.arg(format!("{}:{}", snippet_type.source_file.display(), line));
             }
             _ => {} // Other editors might not support line numbers
@@ -57,4 +58,23 @@ pub fn find_snippet_line_number(content: &str, snippet_name: &str) -> Option<usi
         .enumerate()
         .find(|(_, line)| line.trim() == format!("--- {}", snippet_name))
         .map(|(idx, _)| idx + 1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn given_valid_content_when_finding_snippet_then_returns_correct_line() -> Result<()> {
+        let content = "some content\n--- test\ncontent\n---";
+        assert_eq!(find_snippet_line_number(content, "test"), Some(2));
+        Ok(())
+    }
+
+    #[test]
+    fn given_nonexistent_snippet_when_finding_line_then_returns_none() -> Result<()> {
+        let content = "some content\n--- test\ncontent\n---";
+        assert_eq!(find_snippet_line_number(content, "nonexistent"), None);
+        Ok(())
+    }
 }

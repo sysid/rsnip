@@ -3,7 +3,7 @@ use crossterm::style::Stylize;
 use rsnip::cli::args::Cli;
 use rsnip::cli::commands::execute_command;
 use rsnip::complete::generate_completion_script;
-use rsnip::config::Settings;
+use rsnip::config::{Settings, SnippetTypeConfig};
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::filter::filter_fn;
 use tracing_subscriber::fmt::format::FmtSpan;
@@ -42,7 +42,6 @@ fn main() {
         return;
     }
 
-
     if cli.info {
         use clap::CommandFactory; // Trait which returns the current command
         if let Some(a) = Cli::command().get_author() {
@@ -59,10 +58,15 @@ fn main() {
         // Print available snippet types
         println!("\nAvailable snippet types:");
         for (name, cfg) in &config.snippet_types {
-            if let Some(desc) = &cfg.description {
-                println!("  {}: {}", name, desc);
-            } else {
-                println!("  {}", name);
+            match cfg {
+                SnippetTypeConfig::Concrete { description, .. }
+                | SnippetTypeConfig::Combined { description, .. } => {
+                    if let Some(desc) = description {
+                        println!("  {}: {}", name, desc);
+                    } else {
+                        println!("  {}", name);
+                    }
+                }
             }
         }
     }

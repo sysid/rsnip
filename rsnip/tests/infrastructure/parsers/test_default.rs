@@ -1,19 +1,11 @@
 use anyhow::Result;
 use rsnip::domain::content::SnippetContent;
-use rsnip::domain::parser::{SnippetFormat, SnippetType};
+use rsnip::domain::parser::SnippetFormat;
 use rsnip::domain::snippet::Snippet;
 use rsnip::infrastructure::parsers::SnippetParserFactory;
 use std::io::Write;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
-
-fn create_test_snippet_type(path: &std::path::Path) -> SnippetType {
-    SnippetType {
-        name: "test".to_string(),
-        source_file: path.to_path_buf(),
-        format: SnippetFormat::Default,
-    }
-}
 
 #[test]
 fn given_valid_snippet_file_when_parse_then_returns_correct_snippets() -> Result<()> {
@@ -40,7 +32,6 @@ this is other
 
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "{}", content)?;
-    let snippet_type = create_test_snippet_type(temp_file.path());
     let parser = SnippetParserFactory::create(SnippetFormat::Default);
 
     // Act
@@ -108,7 +99,6 @@ line2"#;
 fn given_empty_file_when_parse_then_returns_empty_vec() -> Result<()> {
     // Arrange
     let temp_file = NamedTempFile::new()?;
-    let snippet_type = create_test_snippet_type(temp_file.path());
     let parser = SnippetParserFactory::create(SnippetFormat::Default);
 
     // Act
@@ -131,7 +121,6 @@ random trailing text
 "#;
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "{}", content)?;
-    let snippet_type = create_test_snippet_type(temp_file.path());
     let parser = SnippetParserFactory::create(SnippetFormat::Default);
 
     // Act
@@ -163,7 +152,6 @@ and nothing else
 ---"#;
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "{}", content)?;
-    let snippet_type = create_test_snippet_type(temp_file.path());
     let parser = SnippetParserFactory::create(SnippetFormat::Default);
 
     // Act
@@ -198,7 +186,6 @@ fn given_nonexistent_file_when_parse_then_returns_error() -> Result<()> {
     Ok(())
 }
 
-#[test]
 #[test]
 fn given_malformed_snippet_without_closing_delimiter_when_parse_then_returns_error() -> Result<()> {
     // Arrange

@@ -1,9 +1,7 @@
 // src/util/testing.rs
 
 use std::env;
-use std::fs;
-use std::path::PathBuf;
-use anyhow::{Context as _, Result};
+use anyhow::Result;
 use tracing::{debug, info};
 use tracing_subscriber::{
     filter::filter_fn,

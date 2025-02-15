@@ -32,6 +32,12 @@ struct SclsSnippet {
 
 pub struct SclsSnippetParser;
 
+impl Default for SclsSnippetParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SclsSnippetParser {
     pub fn new() -> Self {
         Self

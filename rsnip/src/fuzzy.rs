@@ -9,7 +9,6 @@ use skim::{prelude::*, Skim};
 use std::sync::Arc;
 use tracing::{debug, trace};
 use crate::domain::content::SnippetContent;
-use crate::domain::parser::SnippetType;
 use crate::domain::snippet::Snippet;
 
 // Struct to hold snippet text, preview and source info
@@ -36,7 +35,7 @@ impl SkimItem for SnippetItem {
 }
 
 /// Format snippets for display and preview
-pub fn create_skim_items(items: &[Snippet], _: &SnippetType) -> Vec<Arc<dyn SkimItem>> {
+pub fn create_skim_items(items: &[Snippet]) -> Vec<Arc<dyn SkimItem>> {
     let mut snippet_items = Vec::new();
 
     for item in items {
@@ -89,7 +88,6 @@ pub fn create_skim_items(items: &[Snippet], _: &SnippetType) -> Vec<Arc<dyn Skim
 /// Run fuzzy finder with multiline preview support and edit capability
 pub fn run_fuzzy_finder(
     items: &[Snippet],
-    snippet_type: &SnippetType,
     initial_query: &str,
 ) -> Result<Option<String>> {
     debug!("Starting fuzzy finder with query: {}", initial_query);
@@ -149,7 +147,7 @@ pub fn run_fuzzy_finder(
         .color(Some("dark,fg:252,bg:235,hl:178,fg+:252,bg+:237,hl+:178".to_string()))
         .build()?;
 
-    let skim_items = create_skim_items(items, snippet_type);
+    let skim_items = create_skim_items(items);
     trace!("Items created: {}", skim_items.len());
 
     // Use unbounded channel to prevent potential deadlock
