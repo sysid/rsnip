@@ -36,6 +36,7 @@ itertools = "0.14.0"
 ctor = "0.2.9"
 toml = "0.8.20"
 regex = "1.11.1"
+mockall = "0.13.1"
 
 [profile.release]
 codegen-units = 1

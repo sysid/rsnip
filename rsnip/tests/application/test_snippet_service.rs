@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use tempfile::NamedTempFile;
 use rsnip::application::snippet_service::SnippetService;
+use rsnip::infrastructure::minijinja::{MiniJinjaEngine, SafeShellExecutor};
 
 fn create_test_settings_single(source_file: std::path::PathBuf) -> Settings {
     let mut snippet_types = HashMap::new();
@@ -67,7 +68,8 @@ fn given_valid_snippet_file_when_getting_snippets_then_returns_snippets() -> Res
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "--- test\nContent\n---")?;
     let settings = create_test_settings_single(temp_file.path().to_path_buf());
-    let service = SnippetService::new(&settings);
+    let template_engine = Box::new(MiniJinjaEngine::new(Box::new(SafeShellExecutor::new())));
+    let service = SnippetService::new(template_engine, &settings);
 
     // Act
     let snippets = service.get_snippets("test")?;
@@ -86,7 +88,8 @@ fn given_empty_input_when_finding_completion_then_returns_none() -> Result<()> {
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "--- apple\nA red fruit\n---\n--- banana\nA yellow fruit\n---")?;
     let settings = create_test_settings_single(temp_file.path().to_path_buf());
-    let service = SnippetService::new(&settings);
+    let template_engine = Box::new(MiniJinjaEngine::new(Box::new(SafeShellExecutor::new())));
+    let service = SnippetService::new(template_engine, &settings);
 
     // Act & Assert - Test exact match
     assert!(service.find_completion_exact("test", "")?.is_none());
@@ -103,7 +106,8 @@ fn given_exact_match_when_finding_completion_then_returns_snippet() -> Result<()
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "--- test\nContent\n---")?;
     let settings = create_test_settings_single(temp_file.path().to_path_buf());
-    let service = SnippetService::new(&settings);
+    let template_engine = Box::new(MiniJinjaEngine::new(Box::new(SafeShellExecutor::new())));
+    let service = SnippetService::new(template_engine, &settings);
 
     // Act
     let result = service.find_completion_exact("test", "test")?;
@@ -120,7 +124,8 @@ fn given_fuzzy_match_when_finding_completion_then_returns_best_match() -> Result
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "--- test\nContent\n---\n--- testing\nContent2\n---")?;
     let settings = create_test_settings_single(temp_file.path().to_path_buf());
-    let service = SnippetService::new(&settings);
+    let template_engine = Box::new(MiniJinjaEngine::new(Box::new(SafeShellExecutor::new())));
+    let service = SnippetService::new(template_engine, &settings);
 
     // Act
     let result = service.find_completion_fuzzy("test", "tst")?;
@@ -137,7 +142,8 @@ fn given_nonexistent_snippet_when_copying_then_returns_none() -> Result<()> {
     let mut temp_file = NamedTempFile::new()?;
     writeln!(temp_file, "--- apple\nA red fruit\n---")?;
     let settings = create_test_settings_single(temp_file.path().to_path_buf());
-    let service = SnippetService::new(&settings);
+    let template_engine = Box::new(MiniJinjaEngine::new(Box::new(SafeShellExecutor::new())));
+    let service = SnippetService::new(template_engine, &settings);
 
     // Act
     let result = service.copy_snippet_to_clipboard("test", "nonexistent", true)?;
@@ -154,7 +160,8 @@ fn given_template_snippet_when_copying_then_returns_rendered_content() -> Result
     let template_content = "--- date\n{{current_date|strftime('%Y-%m-%d')}}\n---";
     writeln!(temp_file, "{}", template_content)?;
     let settings = create_test_settings_single(temp_file.path().to_path_buf());
-    let service = SnippetService::new(&settings);
+    let template_engine = Box::new(MiniJinjaEngine::new(Box::new(SafeShellExecutor::new())));
+    let service = SnippetService::new(template_engine, &settings);
 
     // Act
     let result = service.copy_snippet_to_clipboard("test", "date", true)?;
@@ -186,7 +193,8 @@ fn given_combined_type_when_getting_snippets_then_returns_all_snippets() -> Resu
         temp_file2.path().to_path_buf(),
     ];
     let settings = create_test_settings_combined(files);
-    let service = SnippetService::new(&settings);
+    let template_engine = Box::new(MiniJinjaEngine::new(Box::new(SafeShellExecutor::new())));
+    let service = SnippetService::new(template_engine, &settings);
 
     // Act
     let snippets = service.get_snippets("combined")?;

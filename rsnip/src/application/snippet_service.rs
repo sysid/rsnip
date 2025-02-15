@@ -4,24 +4,22 @@ use crate::domain::snippet::Snippet;
 use crate::fuzzy;
 use crate::infrastructure::clipboard::copy_to_clipboard;
 use crate::infrastructure::parsers::SnippetParserFactory;
-use crate::template::TemplateEngine;
 use anyhow::{Context, Result};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use std::cmp::Reverse;
 use tracing::{debug, instrument};
+use crate::domain::template::interface::TemplateEngine;
 
 /// Service for managing snippet operations
-#[derive(Debug)]
 pub struct SnippetService<'a> {
-    template_engine: TemplateEngine,
+    template_engine: Box<dyn TemplateEngine>,
     config: &'a Settings,
 }
 
 impl<'a> SnippetService<'a> {
-    /// Creates a new SnippetService
-    pub fn new(config: &'a Settings) -> Self {
+    pub fn new(template_engine: Box<dyn TemplateEngine>, config: &'a Settings) -> Self {
         Self {
-            template_engine: TemplateEngine::new(),
+            template_engine,
             config,
         }
     }
@@ -37,8 +35,11 @@ impl<'a> SnippetService<'a> {
             // Load snippets from each source
             for source in sources {
                 if let Some(concrete_type) = self.config.get_snippet_type(&source) {
-                    let mut source_snippets = self.get_concrete_snippets(&concrete_type)
-                        .with_context(|| format!("Failed to load snippets from source '{}'", source))?;
+                    let mut source_snippets = self
+                        .get_concrete_snippets(&concrete_type)
+                        .with_context(|| {
+                            format!("Failed to load snippets from source '{}'", source)
+                        })?;
                     all_snippets.append(&mut source_snippets);
                 }
             }
@@ -46,7 +47,9 @@ impl<'a> SnippetService<'a> {
             Ok(all_snippets)
         } else {
             // Handle concrete type
-            let concrete_type = self.config.get_snippet_type(snippet_type)
+            let concrete_type = self
+                .config
+                .get_snippet_type(snippet_type)
                 .ok_or_else(|| anyhow::anyhow!("Unknown snippet type: {}", snippet_type))?;
             self.get_concrete_snippets(&concrete_type)
         }

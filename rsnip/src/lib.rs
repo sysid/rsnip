@@ -5,7 +5,6 @@ pub mod config;
 pub mod domain;
 pub mod fuzzy;
 pub mod infrastructure;
-pub mod template;
 pub mod util;
 
 #[cfg(test)]

@@ -1,17 +1,18 @@
-use crate::cli::args::{Cli, Commands};
-use anyhow::{anyhow, Result};
-use crossterm::style::Stylize;
-use std::fs;
-use itertools::Itertools;
-use tracing::debug;
 use crate::application::snippet_service::SnippetService;
+use crate::cli::args::{Cli, Commands};
 use crate::config::{get_snippet_type, Settings, SnippetTypeConfig};
 use crate::infrastructure::edit_snippets::edit_snips_file;
 use crate::util::path_utils::expand_path;
+use anyhow::{anyhow, Result};
+use crossterm::style::Stylize;
+use itertools::Itertools;
+use std::fs;
+use tracing::debug;
+use crate::infrastructure::minijinja::{MiniJinjaEngine, SafeShellExecutor};
 
 pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
-    // Create SnippetService instance with config reference
-    let service = SnippetService::new(config);
+    let template_engine = Box::new(MiniJinjaEngine::new(Box::new(SafeShellExecutor::new())));
+    let service = SnippetService::new(template_engine, config);
 
     match &cli.command {
         Some(Commands::List { ctype, prefix }) => {
@@ -27,14 +28,10 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             snippets.sort_by(|a, b| a.name.cmp(&b.name));
 
             // Find the longest name for padding
-            let max_name_len = snippets
-                .iter()
-                .map(|s| s.name.len())
-                .max()
-                .unwrap_or(0);
+            let max_name_len = snippets.iter().map(|s| s.name.len()).max().unwrap_or(0);
             debug!("Max name length: {}", max_name_len);
 
-            eprintln!("\nSnippets for type '{}':", ctype);  // Print to stderr for piping
+            eprintln!("\nSnippets for type '{}':", ctype); // Print to stderr for piping
             for snippet in snippets {
                 let content = snippet
                     .content
@@ -52,11 +49,7 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
 
                 // Using format! first to ensure the name padding works correctly
                 let padded_name = format!("{:width$}", snippet.name, width = max_name_len);
-                println!(
-                    "  {}    {}",
-                    padded_name.green(),
-                    display_content
-                );
+                println!("  {}    {}", padded_name.green(), display_content);
             }
             Ok(())
         }
@@ -86,7 +79,8 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             let line_number = if let Some(input) = input {
                 // Get snippet to find its position
                 let snippets = service.get_snippets(ctype)?;
-                snippets.iter()
+                snippets
+                    .iter()
                     .position(|s| s.name == *input)
                     .map(|pos| pos + 1)
             } else {
@@ -99,13 +93,22 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
         Some(Commands::Types { list }) => {
             if *list {
                 // Just print the types space-separated
-                println!("{}", config.snippet_types.keys().cloned().sorted().collect::<Vec<_>>().join(" "));
+                println!(
+                    "{}",
+                    config
+                        .snippet_types
+                        .keys()
+                        .cloned()
+                        .sorted()
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                );
             } else {
                 println!("\nAvailable snippet types:");
                 for (name, cfg) in &config.snippet_types {
                     match cfg {
-                        SnippetTypeConfig::Concrete { description, .. } |
-                        SnippetTypeConfig::Combined { description, .. } => {
+                        SnippetTypeConfig::Concrete { description, .. }
+                        | SnippetTypeConfig::Combined { description, .. } => {
                             if let Some(desc) = description {
                                 println!("  {}: {}", name, desc);
                             } else {

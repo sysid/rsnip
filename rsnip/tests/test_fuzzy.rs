@@ -37,7 +37,7 @@ fn create_test_data() -> (Vec<Snippet>, SnippetType) {
 
 #[test]
 fn given_exact_match_when_fuzzy_finder_then_returns_immediately() -> Result<()> {
-    let (items, snippet_type) = create_test_data();
+    let (items, _) = create_test_data();
     let result = run_fuzzy_finder(&items, "apple")?;
     assert_eq!(result, Some("apple".to_string()));
     Ok(())
@@ -45,7 +45,7 @@ fn given_exact_match_when_fuzzy_finder_then_returns_immediately() -> Result<()> 
 
 #[test]
 fn given_single_partial_match_when_fuzzy_finder_then_auto_selects() -> Result<()> {
-    let (items, snippet_type) = create_test_data();
+    let (items, _) = create_test_data();
     let result = run_fuzzy_finder(&items, "ban")?;
     assert_eq!(result, Some("banana".to_string()));
     Ok(())
@@ -54,7 +54,7 @@ fn given_single_partial_match_when_fuzzy_finder_then_auto_selects() -> Result<()
 #[test]
 #[ignore = "This test is interactive via Makefile"]
 fn given_multiple_matches_when_fuzzy_finder_then_shows_interface() -> Result<()> {
-    let (items, snippet_type) = create_test_data();
+    let (items, _) = create_test_data();
     let result = run_fuzzy_finder(&items, "ap")?;
 
     // Since we can't simulate user interaction in unit tests,
@@ -69,7 +69,7 @@ fn given_multiple_matches_when_fuzzy_finder_then_shows_interface() -> Result<()>
 #[test]
 #[ignore = "todo fix"]
 fn given_empty_query_when_fuzzy_finder_then_shows_all() -> Result<()> {
-    let (items, snippet_type) = create_test_data();
+    let (items, _) = create_test_data();
     let result = run_fuzzy_finder(&items, "")?;
 
     // For empty query, it should either:
@@ -163,7 +163,7 @@ fn given_snippets_when_creating_skim_items_then_returns_formatted_items() {
 #[test]
 #[ignore = "Interactive test requires terminal"]
 fn given_no_matches_when_fuzzy_finder_then_shows_interface() -> Result<()> {
-    let (items, snippet_type) = create_test_data();
+    let (items, _) = create_test_data();
     let result = run_fuzzy_finder(&items, "xyz")?;
     assert!(result.is_none());
     Ok(())
@@ -172,7 +172,7 @@ fn given_no_matches_when_fuzzy_finder_then_shows_interface() -> Result<()> {
 #[test]
 #[ignore = "Interactive test requires terminal"]
 fn test_fuzzy_finder_output_is_clean() -> Result<()> {
-    let (items, snippet_type) = create_test_data();
+    let (items, _) = create_test_data();
     let result = run_fuzzy_finder(&items, "test")?;
     assert!(result.as_ref().map_or(true, |s| !s.contains("\x1B[")));
     Ok(())
