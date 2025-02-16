@@ -34,8 +34,8 @@ init-env:  ## init-env
 	@mkdir -p ~/xxx
 
 .PHONY: test
-test:  ## test
-	RUST_LOG=DEBUG pushd $(pkg_src) && cargo test -- --test-threads=1  # --nocapture
+test:  ## Run all tests (unit, integration, and doc tests) with debug logging
+	pushd $(pkg_src) && RUST_LOG=INFO cargo test --all-features --all-targets -- --test-threads=1  #--nocapture
 
 .PHONY: test-cicd
 test-cicd:  ## Run tests excluding clipboard-dependent tests for CI/CD
