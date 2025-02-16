@@ -1,8 +1,10 @@
 mod default;
 mod scls;
+mod vcode;
 
 pub use default::DefaultSnippetParser;
 pub use scls::SclsSnippetParser;
+pub use vcode::VCodeSnippetParser;
 
 use crate::domain::parser::{SnippetFormat, SnippetParser};
 use std::sync::Arc;
@@ -17,6 +19,7 @@ impl SnippetParserFactory {
         match format {
             SnippetFormat::Default => Arc::new(DefaultSnippetParser::new()),
             SnippetFormat::Scls => Arc::new(SclsSnippetParser::new()),
+            SnippetFormat::VCode => Arc::new(VCodeSnippetParser::new()),
         }
     }
 }
@@ -24,10 +27,10 @@ impl SnippetParserFactory {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::Result;
+    use std::io::Write;
     use std::path::PathBuf;
     use tempfile::NamedTempFile;
-    use std::io::Write;
-    use anyhow::Result;
 
     #[test]
     fn given_format_when_creating_parser_then_returns_correct_implementation() {
@@ -55,11 +58,14 @@ mod tests {
     #[test]
     fn given_scls_format_file_when_parsing_then_succeeds() -> Result<()> {
         let mut file = NamedTempFile::new()?;
-        writeln!(file, r#"
+        writeln!(
+            file,
+            r#"
             [[snippets]]
             prefix = "test"
             body = "content"
-        "#)?;
+        "#
+        )?;
 
         let parser = SnippetParserFactory::create(SnippetFormat::Scls);
         let snippets = parser.parse(file.path())?;

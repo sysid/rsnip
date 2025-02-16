@@ -17,7 +17,7 @@ fn given_types_list_flag_when_execute_then_outputs_space_separated() -> Result<(
 
     // Assert
     // todo: make it hermetic
-    output.stdout(predicates::str::contains("general shell"));
+    output.stdout(predicates::str::contains("combined"));
 
     Ok(())
 }

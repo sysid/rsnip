@@ -16,6 +16,11 @@ source_file = "~/.config/helix/snippets/snippets.toml"
 description = "General snippets from Helix/Zed without context binding"
 format = "scls"
 
+[snippet_types.rust]
+source_file = "~/.config/rsnip/rust_snippets.json"
+description = "Rust snippets"
+format = "vcode"
+
 [snippet_types.combined]
 alias = ",,"
 sources = ["snippets", "general", "shell"]

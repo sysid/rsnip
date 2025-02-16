@@ -1,7 +1,7 @@
-use std::path::Path;
-use anyhow::Result;
-use std::path::PathBuf;
 use crate::domain::snippet::Snippet;
+use anyhow::Result;
+use std::path::Path;
+use std::path::PathBuf;
 
 /// Trait defining the interface for snippet parsers
 pub trait SnippetParser: Send + Sync {
@@ -12,8 +12,9 @@ pub trait SnippetParser: Send + Sync {
 /// Format of the snippet file
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SnippetFormat {
-    Default,  // The original rsnip format
-    Scls,     // simple-completion-language-server format
+    Default, // The original rsnip format
+    Scls,    // simple-completion-language-server format
+    VCode,   // Visual Studio Code format
 }
 
 impl SnippetFormat {
@@ -21,6 +22,7 @@ impl SnippetFormat {
         match format.to_lowercase().as_str() {
             "default" => Some(Self::Default),
             "scls" => Some(Self::Scls),
+            "vcode" => Some(Self::VCode),
             _ => None,
         }
     }
