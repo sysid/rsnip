@@ -2,7 +2,7 @@ use clap::Parser;
 use crossterm::style::Stylize;
 use rsnip::cli::args::Cli;
 use rsnip::cli::commands::execute_command;
-use rsnip::complete::generate_completion_script;
+use rsnip::infrastructure::complete::generate_completion_script;
 use rsnip::config::{Settings, SnippetTypeConfig};
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::filter::filter_fn;

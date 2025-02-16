@@ -1,7 +1,7 @@
 use crate::config::Settings;
 use crate::domain::parser::SnippetType;
 use crate::domain::snippet::Snippet;
-use crate::fuzzy;
+use crate::infrastructure::fuzzy;
 use crate::infrastructure::clipboard::copy_to_clipboard;
 use crate::infrastructure::parsers::SnippetParserFactory;
 use anyhow::{Context, Result};

@@ -1,9 +1,7 @@
 pub mod application;
 pub mod cli;
-pub mod complete;
 pub mod config;
 pub mod domain;
-pub mod fuzzy;
 pub mod infrastructure;
 pub mod util;
 

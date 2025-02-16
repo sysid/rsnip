@@ -1,4 +1,4 @@
-use rsnip::fuzzy::{create_skim_items, run_fuzzy_finder};
+use rsnip::infrastructure::fuzzy::{create_skim_items, run_fuzzy_finder};
 use skim::{ItemPreview, PreviewContext};
 use std::path::PathBuf;
 use rsnip::domain::content::SnippetContent;

@@ -28,7 +28,7 @@ pub fn generate_completion_script(
             // Load the template
             env.add_template(
                 "bash_completion",
-                include_str!("../rsnip.alias.bash.template"),
+                include_str!("../../rsnip.alias.bash.template"),
             )?;
 
             // Get template
