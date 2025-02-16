@@ -11,6 +11,10 @@ A powerful command-line snippet manager that helps organize, find, and reuse tex
 
 ## 🌟 Key Features
 
+- **Multiple Snippet Formats**: 
+  - Native format with **rich template support**
+  - VSCode snippets compatibility
+  - SCLS ([Simple Completion Language Server](https://github.com/estin/simple-completion-language-server)) format ([ZED](https://zed.dev/docs/snippets), Helix, etc.)
 - **Smart Organization**: Categorize snippets into types (shell commands, code, notes, etc.)
 - **Fuzzy Search**: Lightning-fast fuzzy finding with interactive fzf-style interface
 - **Deep Shell Integration** (Inspired by [zoxide](https://github.com/ajeetdsouza/zoxide)):
@@ -66,24 +70,25 @@ source_file = "~/.config/rsnip/shell_snippets.txt"
 description = "Shell commands and scripts"
 alias = ","  # Quick access alias
 
-[snippet_types.git]
-source_file = "~/.config/rsnip/git_snippets.txt"
-description = "Git workflows"
-alias = ",g"  # Git-specific alias
+[snippet_types.rust]
+source_file = "~/.config/rsnip/rust_snippets.json"
+description = "Rust snippets in VSCode format"
+format = "vcode"
 
-[snippet_types.docker]
-source_file = "~/.config/rsnip/docker_snippets.txt"
-description = "Docker commands"
-alias = ",d"  # Docker-specific alias
+[snippet_types.python]
+source_file = "~/.config/rsnip/python_snippets.toml"
+description = "Python snippets in SCLS format"
+format = "scls"
 ```
 
 Configuration is searched in:
 `~/.config/rsnip/config.toml`
 
-### Snippet Format
+### Snippet Formats
 
-Snippets use a clear, readable format:
+RSnip supports multiple snippet formats to make it easy to integrate with existing snippet collections:
 
+1. **Default Format** - RSnip's native format with comments and template support:
 ```
 : Optional file-level comments
 
@@ -99,6 +104,44 @@ Multiple lines supported
 Hello {{ env_USER }}!
 Created on: {{ current_date|strftime('%Y-%m-%d') }}
 ---
+```
+
+2. **VSCode Format** - Compatible with Visual Studio Code snippets:
+```json
+{
+    "Rust Hello World": {
+        "prefix": "rust-hello",
+        "body": [
+            "fn main() {",
+            "    println!(\"Hello, world!\");",
+            "}"
+        ],
+        "description": "Insert a simple Rust Hello World program"
+    },
+    "Rust Function": {
+        "prefix": "rust-fn",
+        "body": [
+            "fn ${1:function_name}(${2:params}) -> ${3:ReturnType} {",
+                "    ${4:// function body}",
+            "}"
+        ],
+        "description": "Create a Rust function template"
+    }
+}
+```
+
+3. **SCLS Format** - Simple Completion Language Server format (TOML-based):
+```toml
+[[snippets]]
+prefix = "log"
+scope = ["python"]
+body = "print($1)"
+description = "Simple print statement"
+
+[[snippets]]
+prefix = "func"
+scope = ["python", "javascript"]
+body = "def ${1:name}(${2:args}):\n    ${3:pass}"
 ```
 
 ## 🛠️ Advanced Features
@@ -135,6 +178,9 @@ rsnip edit --ctype shell --input back<tab>
 - Live preview
 - Fuzzy search
 - Vim-style navigation
+
+4. **Shell Support**:
+Currently supports bash. PRs welcome for other shells!
 
 ### Template System
 
@@ -201,7 +247,6 @@ Options:
       --info                  Display version and configuration information
   -h, --help                  Print help
   -V, --version               Print version
-
 ```
 
 ### Debug Support
@@ -286,7 +331,6 @@ Built with excellent Rust crates:
 - skim: Fuzzy finder
 - anyhow/thiserror: Error handling
 - crossterm: Terminal UI
-
 
 ### Similar Work
 [GitHub - knqyf263/pet: Simple command-line snippet manager](https://github.com/knqyf263/pet)

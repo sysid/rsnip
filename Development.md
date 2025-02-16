@@ -31,6 +31,19 @@ Shell Integration Tests:
 source <(rsnip --generate bash)
 rsnip complete --ctype mytype --interactive --input app<TAB>
 ```
+### Expected Behavior Specification
+```toml
+[snippet_types.rust]
+alias = ",r"
+source_file = "~/.config/rsnip/rust_snippets.json"
+description = "Rust snippets"
+format = "vcode"
+```
+- after sourcing the bash completion file the following should work:
+```bash
+rsnip complete --ctype rust --input rust-<tab>  # should (fzf) complete according to contents of rust snippets
+,r rust-<tab>  # should (fzf) complete according to contents of rust snippets
+```
 
 ## Makefile Commands
 The project includes a Makefile with useful commands:
@@ -70,3 +83,4 @@ cargo doc --open
 # Generate docs with private items
 cargo doc --document-private-items --open
 ```
+
