@@ -1,14 +1,16 @@
 use crate::application::snippet_service::SnippetService;
 use crate::cli::args::{Cli, Commands};
 use crate::config::{get_snippet_type, Settings, SnippetTypeConfig};
-use crate::infrastructure::edit_snippets::edit_snips_file;
+use crate::infrastructure::edit_snippets::{edit_snips_file, find_snippet_line_number};
+use crate::infrastructure::minijinja::{MiniJinjaEngine, SafeShellExecutor};
 use crate::util::path_utils::expand_path;
 use anyhow::{anyhow, Result};
 use crossterm::style::Stylize;
 use itertools::Itertools;
 use std::fs;
+use dialoguer::Select;
+use dialoguer::theme::ColorfulTheme;
 use tracing::debug;
-use crate::infrastructure::minijinja::{MiniJinjaEngine, SafeShellExecutor};
 
 pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
     let template_engine = Box::new(MiniJinjaEngine::new(Box::new(SafeShellExecutor::new())));
@@ -55,6 +57,65 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
         }
         Some(Commands::Edit { ctype, input }) => {
             let ctype = ctype.as_deref().unwrap_or("default");
+
+            // Check if this is a combined type
+            if let Some(sources) = config.get_combined_sources(ctype) {
+                debug!("Handling combined type with sources: {:?}", sources);
+
+                if let Some(input_name) = input {
+                    // Search for the snippet in all source files
+                    for source_name in &sources {
+                        if let Some(source_type) = config.get_snippet_type(source_name) {
+                            let file_path = expand_path(&source_type.source_file)?;
+                            if file_path.exists() {
+                                if let Ok(content) = fs::read_to_string(&file_path) {
+                                    if let Some(line_number) =
+                                        find_snippet_line_number(&content, input_name)  // todo: make it work for other formats
+                                    {
+                                        // Found the snippet, edit this file
+                                        return edit_snips_file(&source_type, Some(line_number));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Snippet not found in any source, ask user which file to edit
+                    println!("Snippet '{}' not found. Choose a file to edit:", input_name);
+                } else {
+                    println!("Choose a file to edit:");
+                }
+
+                // Collect valid source files
+                let valid_sources: Vec<_> = sources
+                    .iter()
+                    .filter_map(|name| config.get_snippet_type(name).map(|st| (name, st)))
+                    .collect();
+
+                if valid_sources.is_empty() {
+                    return Err(anyhow!("No valid source files found for type '{}'", ctype));
+                }
+
+                // Create selection items with file paths
+                let items: Vec<String> = valid_sources
+                    .iter()
+                    .map(|(name, st)| format!("{}: {}", name, st.source_file.display()))
+                    .collect();
+
+                // Show selection dialog
+                let selection = Select::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Select file to edit")
+                    .items(&items)
+                    .default(0)
+                    .interact()?;
+
+                // Edit the selected file
+                let (_, snippet_type) = &valid_sources[selection];
+                edit_snips_file(snippet_type, Some(1))?;
+                return Ok(());
+            }
+
+            // Handle concrete type (existing logic)
             let snippet_type = get_snippet_type(config, ctype)?;
             let expanded_path = expand_path(&snippet_type.source_file)?;
 
@@ -90,6 +151,7 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
             edit_snips_file(&snippet_type, line_number)?;
             Ok(())
         }
+
         Some(Commands::Types { list }) => {
             if *list {
                 // Just print the types space-separated
