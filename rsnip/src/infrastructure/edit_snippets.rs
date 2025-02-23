@@ -35,6 +35,9 @@ pub fn edit_snips_file(snippet_type: &SnippetType, line_number: Option<usize>) -
                 cmd.arg("--goto");
                 cmd.arg(format!("{}:{}", snippet_type.source_file.display(), line));
             }
+            "hx" => {
+                cmd.arg(format!("+{}", line));
+            }
             _ => {} // Other editors might not support line numbers
         }
     }
