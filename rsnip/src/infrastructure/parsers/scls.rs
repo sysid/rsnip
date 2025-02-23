@@ -1,15 +1,14 @@
+// infrastructure/parsers/scls.rs
 use crate::domain::content::SnippetContent;
 use crate::domain::parser::SnippetParser;
 use crate::domain::snippet::Snippet;
-use anyhow::{Context, Result};
+use crate::domain::errors::{SnippetError, SnippetResult};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::Deserialize;
-// infrastructure/parsers/scls.rs
 use std::path::Path;
 use tracing::{debug, instrument};
 
-// Lazily initialized regex for placeholder conversion
 static PLACEHOLDER_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"\$\{(\d+):([^}]+)\}|\$(\d+)").expect("Failed to compile placeholder regex")
 });
@@ -43,7 +42,6 @@ impl SclsSnippetParser {
         Self
     }
 
-    /// Convert VSCode-style placeholders to Jinja2 template syntax
     fn convert_placeholders(input: &str) -> String {
         PLACEHOLDER_REGEX.replace_all(input, |caps: &regex::Captures| {
             if let Some(text) = caps.get(2) {
@@ -74,14 +72,22 @@ impl SclsSnippetParser {
 
 impl SnippetParser for SclsSnippetParser {
     #[instrument(level = "debug", skip(self))]
-    fn parse(&self, path: &Path) -> Result<Vec<Snippet>> {
+    fn parse(&self, path: &Path) -> SnippetResult<Vec<Snippet>> {
         debug!("Parsing SCLS format snippets from: {:?}", path);
 
         let content = std::fs::read_to_string(path)
-            .with_context(|| format!("Failed to read SCLS snippets from '{}'", path.display()))?;
+            .map_err(|e| SnippetError::FileError {
+                file: path.to_path_buf(),
+                source: e,
+            })?;
 
         let snippet_file: SclsSnippetFile = toml::from_str(&content)
-            .with_context(|| format!("Failed to parse TOML from '{}'", path.display()))?;
+            .map_err(|e| SnippetError::InvalidFormat {
+                name: "".to_string(),
+                file: path.to_path_buf(),
+                line: 1, // TOML errors don't provide line numbers
+                reason: format!("Failed to parse TOML: {}", e),
+            })?;
 
         let snippets = snippet_file.snippets.into_iter().map(|scls_snippet| {
             // Convert body text and handle placeholders

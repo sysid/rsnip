@@ -1,12 +1,12 @@
 use crate::domain::snippet::Snippet;
-use anyhow::Result;
+use crate::domain::errors::SnippetResult;
 use std::path::Path;
 use std::path::PathBuf;
 
 /// Trait defining the interface for snippet parsers
 pub trait SnippetParser: Send + Sync {
     /// Parse snippets from a file at the given path
-    fn parse(&self, path: &Path) -> Result<Vec<Snippet>>;
+    fn parse(&self, path: &Path) -> SnippetResult<Vec<Snippet>>;
 }
 
 /// Format of the snippet file

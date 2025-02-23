@@ -2,7 +2,7 @@
 use crate::domain::content::SnippetContent;
 use crate::domain::parser::SnippetParser;
 use crate::domain::snippet::Snippet;
-use anyhow::{Context, Result};
+use crate::domain::errors::{SnippetError, SnippetResult};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::Path;
@@ -56,33 +56,35 @@ impl VCodeSnippetParser {
 
 impl SnippetParser for VCodeSnippetParser {
     #[instrument(level = "debug", skip(self))]
-    fn parse(&self, path: &Path) -> Result<Vec<Snippet>> {
+    fn parse(&self, path: &Path) -> SnippetResult<Vec<Snippet>> {
         debug!("Parsing VSCode format snippets from: {:?}", path);
 
         let content = std::fs::read_to_string(path)
-            .with_context(|| format!("Failed to read VSCode snippets from '{}'", path.display()))?;
+            .map_err(|e| SnippetError::FileError {
+                file: path.to_path_buf(),
+                source: e,
+            })?;
 
         let snippets: HashMap<String, VCodeSnippet> = serde_json::from_str(&content)
-            .with_context(|| format!("Failed to parse JSON from '{}'", path.display()))?;
+            .map_err(|e| SnippetError::InvalidFormat {
+                name: "".to_string(),
+                file: path.to_path_buf(),
+                line: 1, // JSON errors don't provide line numbers
+                reason: format!("Failed to parse JSON: {}", e),
+            })?;
 
         let result = snippets
             .into_iter()
             .map(|(_, snippet)| {
-                // Convert body to string, joining multiple lines if necessary
                 let body = match snippet.body {
                     SnippetBody::Single(text) => text,
                     SnippetBody::Multiple(lines) => lines.join("\n"),
                 };
 
-                // Convert placeholders
-                // let converted_body = Self::convert_placeholders(&body);
-
-                // Build comments from description if present
                 let comments = snippet.description.map_or_else(Vec::new, |desc| vec![desc]);
 
                 Snippet {
                     name: snippet.prefix,
-                    // content: SnippetContent::new(converted_body),
                     content: SnippetContent::new(body),
                     comments,
                 }

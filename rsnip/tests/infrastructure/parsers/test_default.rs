@@ -90,8 +90,15 @@ line2"#;
 
     // Assert
     let err = result.unwrap_err().to_string();
-    assert!(err.contains("Missing closing delimiter"), "Error should explain missing delimiter");
-    assert!(err.contains("at line 2"), "Error should indicate the line number");
+    println!("Actual error message: {}", err);  // Debug print
+    assert!(
+        err.contains("Missing closing delimiter"),
+        "Error should explain missing delimiter"
+    );
+    assert!(
+        err.contains("line 2"),
+        "Error should indicate the line number"
+    );
     Ok(())
 }
 
@@ -206,8 +213,11 @@ content
     // Assert
     assert!(result.is_err());
     let err = result.unwrap_err().to_string();
-    assert!(err.contains("malformed"), "Error should mention malformed snippet");
-    assert!(err.contains("Missing closing delimiter"), "Error should explain the issue");
+    println!("Actual error message: {}", err); // Debug print
+    assert!(
+        err.contains("Missing closing delimiter"),
+        "Error should explain the issue"
+    );
     Ok(())
 }
 
@@ -232,8 +242,11 @@ content
 
     // Assert
     let err = result.unwrap_err().to_string();
-    assert!(err.contains("malformed"), "Error should mention malformed snippet");
-    assert!(err.contains("Missing closing delimiter"), "Error should explain the issue");
+    println!("Actual error message: {}", err); // Debug print
+    assert!(
+        err.contains("Missing closing delimiter"),
+        "Error should explain the issue"
+    );
     Ok(())
 }
 
@@ -257,7 +270,10 @@ content
 
     // Assert
     let err = result.unwrap_err().to_string();
-    assert!(err.contains("without opening snippet"), "Error should explain the issue");
+    assert!(
+        err.contains("Found closing delimiter without opening"),
+        "Error should explain the issue"
+    );
     Ok(())
 }
 
@@ -277,6 +293,9 @@ fn given_empty_snippet_when_parse_then_returns_error() -> Result<()> {
 
     // Assert
     let err = result.unwrap_err().to_string();
-    assert!(err.contains("Empty content"), "Error should explain the issue");
+    assert!(
+        err.contains("Empty content"),
+        "Error should explain the issue"
+    );
     Ok(())
 }

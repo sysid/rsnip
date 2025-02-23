@@ -1,20 +1,9 @@
 use crate::domain::content::SnippetContent;
+use crate::domain::errors::{SnippetError, SnippetResult};
 use crate::domain::parser::SnippetParser;
 use crate::domain::snippet::Snippet;
-use anyhow::{Context, Result};
 use std::path::Path;
-use thiserror::Error;
 use tracing::{debug, instrument};
-
-#[derive(Error, Debug)]
-pub enum ParserError {
-    #[error("Malformed snippet '{name}' at line {line}: {reason}")]
-    MalformedSnippet {
-        name: String,
-        line: usize,
-        reason: String,
-    },
-}
 
 pub struct DefaultSnippetParser;
 
@@ -29,14 +18,19 @@ impl DefaultSnippetParser {
         Self
     }
 
-    fn validate_snippet(name: &str, content_lines: &[String], line_number: usize) -> Result<()> {
+    fn validate_snippet(
+        name: &str,
+        content_lines: &[String],
+        line_number: usize,
+        file: &Path,
+    ) -> SnippetResult<()> {
         if content_lines.is_empty() {
-            return Err(ParserError::MalformedSnippet {
+            return Err(SnippetError::InvalidFormat {
                 name: name.to_string(),
+                file: file.to_path_buf(),
                 line: line_number,
                 reason: "Empty content".to_string(),
-            }
-            .into());
+            });
         }
         Ok(())
     }
@@ -60,12 +54,15 @@ impl SnippetBuilder {
         }
     }
 
-    fn build(self) -> Result<Option<Snippet>> {
+    fn build(self, file: &Path) -> SnippetResult<Option<Snippet>> {
         match self.name {
             Some(name) => {
-                // Validate the snippet structure
-                DefaultSnippetParser::validate_snippet(&name, &self.content_lines, self.start_line)?;
-
+                DefaultSnippetParser::validate_snippet(
+                    &name,
+                    &self.content_lines,
+                    self.start_line,
+                    file,
+                )?;
                 let snippet_text = self.content_lines.join("\n");
                 Ok(Some(Snippet {
                     name,
@@ -80,10 +77,12 @@ impl SnippetBuilder {
 
 impl SnippetParser for DefaultSnippetParser {
     #[instrument(level = "debug", skip(self))]
-    fn parse(&self, path: &Path) -> Result<Vec<Snippet>> {
+    fn parse(&self, path: &Path) -> SnippetResult<Vec<Snippet>> {
         debug!("Parsing default format snippets from: {:?}", path);
-        let content = std::fs::read_to_string(path)
-            .with_context(|| format!("Failed to read snippets from '{}'", path.display()))?;
+        let content = std::fs::read_to_string(path).map_err(|e| SnippetError::FileError {
+            file: path.to_path_buf(),
+            source: e,
+        })?;
 
         let mut snippets = Vec::new();
         let mut builder = SnippetBuilder::new();
@@ -97,12 +96,13 @@ impl SnippetParser for DefaultSnippetParser {
             if trimmed.starts_with("--- ") {
                 // If we're already in a snippet, this means we found a new one without proper closure
                 if in_snippet {
-                    return Err(ParserError::MalformedSnippet {
-                        name: builder.name.unwrap_or_default(),
+                    let name = builder.name.as_deref().unwrap_or("unknown");
+                    return Err(SnippetError::InvalidFormat {
+                        name: name.to_string(),
+                        file: path.to_path_buf(),
                         line: builder.start_line,
                         reason: "Missing closing delimiter (---)".to_string(),
-                    }
-                    .into());
+                    });
                 }
 
                 // Start new snippet
@@ -114,16 +114,15 @@ impl SnippetParser for DefaultSnippetParser {
                 last_line_empty = false;
             } else if trimmed == "---" {
                 if !in_snippet {
-                    return Err(ParserError::MalformedSnippet {
-                        name: "unknown".to_string(),
+                    return Err(SnippetError::InvalidFormat {
+                        name: "".to_string(),
+                        file: path.to_path_buf(),
                         line: line_num,
                         reason: "Found closing delimiter without opening snippet".to_string(),
-                    }
-                    .into());
+                    });
                 }
 
-                // Finalize current snippet
-                if let Some(snippet) = builder.build()? {
+                if let Some(snippet) = builder.build(path)? {
                     snippets.push(snippet);
                 }
                 builder = SnippetBuilder::new();
@@ -135,7 +134,9 @@ impl SnippetParser for DefaultSnippetParser {
                     builder.comments.push(trimmed[1..].trim().to_string());
                 } else {
                     // Only add empty lines if they're not at the start/end and not consecutive
-                    if !trimmed.is_empty() || (!builder.content_lines.is_empty() && !last_line_empty) {
+                    if !trimmed.is_empty()
+                        || (!builder.content_lines.is_empty() && !last_line_empty)
+                    {
                         builder.content_lines.push(line.to_string());
                     }
                     last_line_empty = trimmed.is_empty();
@@ -145,12 +146,13 @@ impl SnippetParser for DefaultSnippetParser {
 
         // Handle unclosed snippet at EOF
         if in_snippet {
-            return Err(ParserError::MalformedSnippet {
-                name: builder.name.unwrap_or_default(),
+            let name = builder.name.as_deref().unwrap_or("unknown");
+            return Err(SnippetError::InvalidFormat {
+                name: name.to_string(),
+                file: path.to_path_buf(),
                 line: builder.start_line,
                 reason: "Missing closing delimiter (---) at end of file".to_string(),
-            }
-            .into());
+            });
         }
 
         Ok(snippets)
