@@ -6,10 +6,10 @@ use crate::infrastructure::minijinja::{MiniJinjaEngine, SafeShellExecutor};
 use crate::util::path_utils::expand_path;
 use anyhow::{anyhow, Result};
 use crossterm::style::Stylize;
+use dialoguer::theme::ColorfulTheme;
+use dialoguer::Select;
 use itertools::Itertools;
 use std::fs;
-use dialoguer::Select;
-use dialoguer::theme::ColorfulTheme;
 use tracing::debug;
 
 pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
@@ -70,7 +70,8 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
                             if file_path.exists() {
                                 if let Ok(content) = fs::read_to_string(&file_path) {
                                     if let Some(line_number) =
-                                        find_snippet_line_number(&content, input_name)  // todo: make it work for other formats
+                                        find_snippet_line_number(&content, input_name)
+                                    // todo: make it work for other formats
                                     {
                                         // Found the snippet, edit this file
                                         return edit_snips_file(&source_type, Some(line_number));
@@ -138,12 +139,8 @@ pub fn execute_command(cli: &Cli, config: &Settings) -> Result<()> {
 
             // If input is provided, find the snippet to edit
             let line_number = if let Some(input) = input {
-                // Get snippet to find its position
-                let snippets = service.get_snippets(ctype)?;
-                snippets
-                    .iter()
-                    .position(|s| s.name == *input)
-                    .map(|pos| pos + 1)
+                let content = fs::read_to_string(expanded_path)?;
+                find_snippet_line_number(&content, input) // todo: make it work for other formats
             } else {
                 Some(1usize)
             };
