@@ -88,7 +88,7 @@ Configuration is searched in:
 
 RSnip supports multiple snippet formats to make it easy to integrate with existing snippet collections:
 
-1. **Default Format** - RSnip's native format with comments and template support:
+1. **Native Format** - RSnip's native format with comments and template support:
 ```
 : Optional file-level comments
 
@@ -105,6 +105,7 @@ Hello {{ env_USER }}!
 Created on: {{ current_date|strftime('%Y-%m-%d') }}
 ---
 ```
+There is also a Vim plugin for syntax highlighting and editing of rsnip snippet files: [rsnip-vim](https://github.com/sysid/rsnip-vim)
 
 2. **VSCode Format** - Compatible with Visual Studio Code snippets:
 ```json
