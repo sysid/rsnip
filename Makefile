@@ -40,8 +40,9 @@ test:  ## Run all tests (unit, integration, and doc tests) with debug logging
 .PHONY: test-cicd
 test-cicd:  ## Run tests excluding clipboard-dependent tests for CI/CD
 	RUST_LOG=DEBUG pushd $(pkg_src) && cargo test -- --test-threads=1 \
-		--skip given_snippet_without_description_when_copying_then_returns_some \
-		--skip given_template_snippet_when_copying_then_returns_rendered_content
+		--skip given_nonexistent_snippet_when_copying_then_returns_none \
+		--skip given_template_snippet_when_copying_then_returns_rendered_content \
+		--skip given_static_content_when_processing_then_copies_unchanged
 
 
 .PHONY: test-trace
