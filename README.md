@@ -9,6 +9,12 @@ A powerful command-line snippet manager that helps organize, find, and reuse tex
 
 [Fast, Reliable, Yours: Why Snippets Outshine LLMs for boring Tasks](https://sysid.github.io/rsnip/)
 
+---
+
+> **Note:** Development of `rsnip` has been discontinued in favor of [`bkmr`](https://github.com/sysid/bkmr), which integrates snippet management with advanced bookmark handling, semantic and fuzzy search capabilities, and a unified interface to streamline developer productivity. See [bkmr reborn](https://sysid.github.io/bkmr-reborn/) for details on how `bkmr` enhances and expands upon the functionality of `rsnip`.
+
+---
+
 ## 🌟 Key Features
 
 - **Multiple Snippet Formats**: 

@@ -1,8 +1,10 @@
 use anyhow::Result;
 use std::path::{Path, PathBuf};
+use tracing::instrument;
 
 /// Expands a path that may contain a tilde for the home directory
-pub fn expand_path<P: AsRef<Path>>(path: P) -> Result<PathBuf> {
+#[instrument(level = "trace")]
+pub fn expand_path<P: AsRef<Path>  + std::fmt::Debug>(path: P) -> Result<PathBuf> {
     let path_str = path.as_ref().to_string_lossy();
 
     if path_str.starts_with('~') {
